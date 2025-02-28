@@ -10,7 +10,7 @@ theory Ground_Order_Resolution_Calc
     First_Order_Clause.Multiset_Extra
     First_Order_Clause.Clausal_Calculus_Extra
     First_Order_Clause.Selection_Function
-    First_Order_Clause.Ground_Order
+    Ground_Order_Base
 begin
 
 subsection \<open>Helper\<close>
@@ -77,29 +77,6 @@ definition G_entails :: "'f gterm clause set \<Rightarrow> 'f gterm clause set \
 
 subsection \<open>Smaller Conclussions\<close>
 
-(*
-P1 + P2 = C + D = (C' + L\<^sub>C) + (L\<^sub>D + D')
-zu zeigen dass
-C' + D' \<prec>\<^sub>c (C' + L\<^sub>C) + (L\<^sub>D + D')
-und R = C' + D'
-
-*)
-lemma gor_smaller_conclusion:
-  assumes
-    step: "resolution C D R"
-  shows "R \<prec>\<^sub>c (C + D)"
-  using step
-proof ( cases C D R rule: resolution.cases)
-  case (resolutionI L\<^sub>C C' L\<^sub>D  D')
-  have "(C' + D') \<prec>\<^sub>c ((add_mset L\<^sub>C C')  + (add_mset L\<^sub>D D'))"
-    unfolding less\<^sub>c_def
-    by (metis add.right_neutral add_mset_not_empty empty_iff one_step_implies_multp
-        set_mset_empty union_mset_add_mset_left union_mset_add_mset_right)
-  thus ?thesis
-    unfolding resolutionI
-    by meson
-qed
-
 lemma ground_resolution_smaller_conclusion:
   assumes
     step: "resolution C D R"
@@ -125,6 +102,78 @@ proof (cases C D R rule: resolution.cases)
     unfolding resolutionI
     by (simp only: add.commute)
 qed
+
+lemma ground_factoring_smaller_conclusion:
+  assumes step: "factoring C D"
+  shows "D \<prec>\<^sub>c C"
+  using step
+proof (cases C D rule: factoring.cases)
+  case (factoringI L\<^sub>1 C')
+  note factI = factoringI
+  have C_def: "C = add_mset L\<^sub>1 (add_mset L\<^sub>1 C')"
+    and D_def: "D = add_mset L\<^sub>1 C'"
+    using factI by simp_all
+
+  have "\<forall>K \<in># add_mset L\<^sub>1 C'. \<not> (L\<^sub>1 \<prec>\<^sub>l K)"
+    unfolding is_maximal_def
+    using factI
+    by (metis add_mset_remove_trivial is_maximal_def literal.order.less_irrefl
+        more_than_one_mset_mset_diff union_single_eq_member)
+
+  have "D = remove1 L\<^sub>1 C"
+    unfolding C_def D_def
+    by simp
+  
+qed
+
+lemma ground_eq_factoring_smaller_conclusion:
+  assumes step: "eq_factoring P C"
+  shows "C \<prec>\<^sub>c P"
+  using step
+proof (cases P C rule: eq_factoring.cases)
+  case (eq_factoringI L\<^sub>1 L\<^sub>2 P' t t' t'')
+  have "is_maximal L\<^sub>1 P"
+    using eq_factoringI 
+    by simp
+
+  hence "\<forall>K \<in># add_mset (Pos (Upair t t'')) P'. \<not> Pos (Upair t t') \<prec>\<^sub>l K"
+    unfolding eq_factoringI is_maximal_def
+    by auto
+   
+  hence "\<not> Pos (Upair t t') \<prec>\<^sub>l Pos (Upair t t'')"
+    by simp
+
+  hence "Pos (Upair t t'') \<preceq>\<^sub>l Pos (Upair t t')"
+    by order
+
+  hence "t'' \<preceq>\<^sub>t t'"
+    unfolding reflclp_iff
+    by (auto simp: less\<^sub>l_def multp_cancel_add_mset)
+
+  have "C = add_mset (Neg (Upair t' t'')) (add_mset (Pos (Upair t t'')) P')"
+    using eq_factoringI 
+    by argo
+
+  moreover have "add_mset (Neg (Upair t' t'')) (add_mset (Pos (Upair t t'')) P') \<prec>\<^sub>c P"
+    unfolding eq_factoringI less\<^sub>c_def
+  proof (intro one_step_implies_multp[of "{#_#}" "{#_#}", simplified])
+    have "t'' \<prec>\<^sub>t t"
+      using \<open>t' \<prec>\<^sub>t t\<close> \<open>t'' \<preceq>\<^sub>t t'\<close> 
+      by order
+
+    hence "multp (\<prec>\<^sub>t) {#t', t'', t', t''#} {#t, t'#}"
+      using one_step_implies_multp[of _ _ _ "{#}", simplified]
+      by (metis \<open>t' \<prec>\<^sub>t t\<close> diff_empty id_remove_1_mset_iff_notin insert_iff
+          set_mset_add_mset_insert)
+
+    thus "Neg (Upair t' t'') \<prec>\<^sub>l Pos (Upair t t')"
+      by (simp add: less\<^sub>l_def)
+  qed
+
+  ultimately show ?thesis
+    by argo
+qed
+
 
 subsection \<open>Sublocales\<close>
 

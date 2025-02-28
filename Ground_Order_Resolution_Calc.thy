@@ -13,9 +13,6 @@ theory Ground_Order_Resolution_Calc
     Ground_Order_Base
 begin
 
-subsection \<open>Helper\<close>
-
-
 section \<open>Resolution Calculus\<close>
 
 locale ground_order_resolution_calculus =
@@ -75,6 +72,7 @@ definition G_entails :: "'f gterm clause set \<Rightarrow> 'f gterm clause set \
   "G_entails N\<^sub>1 N\<^sub>2 \<longleftrightarrow> (\<forall> I. I \<TTurnstile>s N\<^sub>1 \<longrightarrow> I \<TTurnstile>s N\<^sub>2)"
 
 
+
 subsection \<open>Smaller Conclussions\<close>
 
 lemma ground_resolution_smaller_conclusion:
@@ -108,42 +106,51 @@ lemma ground_factoring_smaller_conclusion:
   shows "D \<prec>\<^sub>c C"
   using step
 proof (cases C D rule: factoring.cases)
-  case (factoringI L\<^sub>1 P')
+  case (factoringI L\<^sub>1 C')
   then show ?thesis
-    by (metis add_mset_add_single mset_subset_eq_exists_conv multi_self_add_other_not_self
-        multp_subset_supersetI totalpD totalp_less_cls transp_less_lit)
+    by (metis add.right_neutral add_mset_add_single add_mset_not_empty empty_iff
+        less\<^sub>c_def one_step_implies_multp set_mset_empty)  
 qed
 
-subsection \<open>Sublocales\<close>
+subsection \<open>Redundancy Criterion\<close>
+end
 
-sublocale consequence_relation where
-  Bot = G_Bot and
-  entails = G_entails
-proof unfold_locales
-  show "G_Bot \<noteq> {}"
-    by simp
-next
-  show "\<And>B N. B \<in> G_Bot \<Longrightarrow> G_entails {B} N"
-    by (simp add: G_entails_def)
-next
-  show "\<And>N2 N1. N2 \<subseteq> N1 \<Longrightarrow> G_entails N1 N2"
-    by (auto simp: G_entails_def elim!: true_clss_mono[rotated])
-next
-  fix N1 N2 assume ball_G_entails: "\<forall>C \<in> N2. G_entails N1 {C}"
-  show "G_entails N1 N2"
-    unfolding G_entails_def
-    by (meson G_entails_def all_formulas_entailed ball_G_entails)
-next
-  show "\<And>N1 N2 N3. G_entails N1 N2 \<Longrightarrow> G_entails N2 N3 \<Longrightarrow> G_entails N1 N3"
-    using G_entails_def
-    by simp
-qed
-
-
-sublocale calculus_with_finitary_standard_redundancy where
+sublocale ground_order_resolution_calculus \<subseteq> calculus_with_finitary_standard_redundancy where
   Inf = G_Inf and
   Bot = G_Bot and
   entails = G_entails and
   less = "(\<prec>\<^sub>c)"
   defines GRed_I = Red_I and GRed_F = Red_F
 proof unfold_locales
+  show "transp (\<prec>\<^sub>c)"
+    by simp
+next
+  show "wfP (\<prec>\<^sub>c)"
+    by auto
+next
+  show "\<And>\<iota>. \<iota> \<in> G_Inf \<Longrightarrow> prems_of \<iota> \<noteq> []"
+    by (auto simp: G_Inf_def)
+next
+  fix \<iota>
+  have "concl_of \<iota> \<prec>\<^sub>c main_prem_of \<iota>"
+    if \<iota>_def: "\<iota> = Infer [P\<^sub>2, P\<^sub>1] C" and
+      infer: "resolution P\<^sub>1 P\<^sub>2 C"
+    for P\<^sub>2 P\<^sub>1 C
+    unfolding \<iota>_def
+    using infer
+    using ground_resolution_smaller_conclusion
+    by simp
+
+  moreover have "concl_of \<iota> \<prec>\<^sub>c main_prem_of \<iota>"
+    if \<iota>_def: "\<iota> = Infer [P] C" and
+      infer: "factoring P C"
+    for P C
+    unfolding \<iota>_def
+    using infer
+    using ground_factoring_smaller_conclusion
+    by simp
+
+  ultimately show "\<iota> \<in> G_Inf \<Longrightarrow> concl_of \<iota> \<prec>\<^sub>c main_prem_of \<iota>"
+    unfolding G_Inf_def
+    sledgehammer
+qed
