@@ -51,17 +51,11 @@ where
   D = add_mset L\<^sub>1 C' \<Longrightarrow>
   factoring C D"
 
-abbreviation factoring_inferences where
-"factoring_inferences \<equiv> {Infer [C] D | C D. factoring C D}"
-
-abbreviation resolution_inferences where
-  "resolution_inferences \<equiv> {Infer [D, C] R | D C R. resolution D C R}"
-
 subsection \<open>Ground Layer\<close>
 
 definition G_Inf :: "'f gterm clause inference set" where
   "G_Inf =
-    {Infer [P\<^sub>2, P\<^sub>1] C | P\<^sub>2 P\<^sub>1 C. resolution P\<^sub>2 P\<^sub>1 C} \<union>
+    {Infer [D, C] R | D C R. resolution C D R} \<union>
     {Infer [P] C | P C. factoring P C}"
 
 abbreviation G_Bot :: "'f gterm clause set" where
@@ -70,8 +64,6 @@ abbreviation G_Bot :: "'f gterm clause set" where
 
 definition G_entails :: "'f gterm clause set \<Rightarrow> 'f gterm clause set \<Rightarrow> bool" where
   "G_entails N\<^sub>1 N\<^sub>2 \<longleftrightarrow> (\<forall> I. I \<TTurnstile>s N\<^sub>1 \<longrightarrow> I \<TTurnstile>s N\<^sub>2)"
-
-
 
 subsection \<open>Smaller Conclussions\<close>
 
@@ -115,6 +107,39 @@ qed
 subsection \<open>Redundancy Criterion\<close>
 end
 
+sublocale ground_order_resolution_calculus \<subseteq> consequence_relation where
+  Bot = G_Bot and
+  entails = G_entails
+proof unfold_locales
+  show "G_Bot \<noteq> {}"
+    by simp
+next
+  show "\<And>B N. B \<in> G_Bot \<Longrightarrow> G_entails {B} N"
+    by (simp add: G_entails_def)
+
+next
+  show "\<And>N2 N1. N2 \<subseteq> N1 \<Longrightarrow> G_entails N1 N2"
+    by (auto simp: G_entails_def elim!: true_clss_mono[rotated])
+next
+  fix N1 N2 assume ball_G_entails: "\<forall>C \<in> N2. G_entails N1 {C}"
+  show "G_entails N1 N2"
+    unfolding G_entails_def
+  proof (intro allI impI)
+    fix I :: "'f gterm set"
+    assume "I \<TTurnstile>s N1"
+    hence "\<forall>C \<in> N2. I \<TTurnstile>s {C}"
+      using ball_G_entails 
+      by (simp add: G_entails_def)
+
+    then show "I \<TTurnstile>s N2"
+      by (simp add: true_clss_def)
+  qed
+next
+  show "\<And>N1 N2 N3. G_entails N1 N2 \<Longrightarrow> G_entails N2 N3 \<Longrightarrow> G_entails N1 N3"
+    using G_entails_def 
+    by simp
+qed
+
 sublocale ground_order_resolution_calculus \<subseteq> calculus_with_finitary_standard_redundancy where
   Inf = G_Inf and
   Bot = G_Bot and
@@ -133,9 +158,9 @@ next
 next
   fix \<iota>
   have "concl_of \<iota> \<prec>\<^sub>c main_prem_of \<iota>"
-    if \<iota>_def: "\<iota> = Infer [P\<^sub>2, P\<^sub>1] C" and
-      infer: "resolution P\<^sub>1 P\<^sub>2 C"
-    for P\<^sub>2 P\<^sub>1 C
+    if \<iota>_def: "\<iota> = Infer [D, C] R" and
+      infer: "resolution C D R"
+    for D C R
     unfolding \<iota>_def
     using infer
     using ground_resolution_smaller_conclusion
@@ -152,5 +177,5 @@ next
 
   ultimately show "\<iota> \<in> G_Inf \<Longrightarrow> concl_of \<iota> \<prec>\<^sub>c main_prem_of \<iota>"
     unfolding G_Inf_def
-    sledgehammer
+    by fast
 qed
