@@ -1,4 +1,4 @@
-theory Ground_Order_Resolution_Calc
+theory Ground_Order_Resolution
   imports
     Main
 

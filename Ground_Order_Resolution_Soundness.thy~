@@ -1,0 +1,10 @@
+theory Ground_Order_Resolution_Soundness
+  imports Ground_Order_Resolution
+begin
+
+lemma (in ground_order_resolution_calculus) soundness_ground_resolution:
+  assumes
+    step: "resolution C D R"
+  shows "G_entails {C, D} {R}"
+  using step
+proof (cases C D R rule: resolution.cases)
