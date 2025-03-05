@@ -58,4 +58,42 @@ proof (cases C D R rule: resolution.cases)
   qed
 qed
 
+lemma (in ground_order_resolution_calculus) soundness_ground_factoring:
+  assumes step: "factoring C D"
+  shows "G_entails {C} {D}"
+  using step
+proof (cases C D rule: factoring.cases)
+  case (factoringI L\<^sub>1 C')
+  show ?thesis
+    unfolding G_entails_def true_clss_singleton
+  proof (intro allI impI)
+    fix I :: "'f gterm set"
+    assume "I \<TTurnstile> C"
+    then obtain K :: "'f gterm literal" where
+      "K \<in># C" and "I \<TTurnstile>l K"
+      by (auto simp: true_cls_def)
+
+    show "I \<TTurnstile> D"
+    proof (cases "K = L\<^sub>1")
+      case True
+      hence "I \<TTurnstile>l L\<^sub>1"
+        using \<open>I \<TTurnstile>l K\<close> by metis
+      thus ?thesis
+        unfolding factoringI
+        by (metis true_cls_add_mset)
+    next
+      case False
+      hence "K \<in># C'"
+       using \<open>K \<in># C\<close>
+        unfolding factoringI
+        by auto
+      hence "K \<in># D"
+        unfolding factoringI
+        by simp
+      thus ?thesis
+        using \<open>I \<TTurnstile>l K\<close> by blast
+    qed
+  qed
+qed
+
 end

@@ -96,4 +96,15 @@ proof (cases C D rule: factoring.cases)
   qed
 qed
 
+sublocale ground_order_resolution_calculus \<subseteq> sound_inference_system where
+  Inf = G_Inf and
+  Bot = G_Bot and
+  entails = G_entails
+proof unfold_locales
+  show "\<And>\<iota>. \<iota> \<in> G_Inf \<Longrightarrow> G_entails (set (prems_of \<iota>)) {concl_of \<iota>}"
+    unfolding G_Inf_def
+    using soundness_ground_resolution
+    using soundness_ground_factoring
+    by (auto simp: G_entails_def)
+qed
 end
