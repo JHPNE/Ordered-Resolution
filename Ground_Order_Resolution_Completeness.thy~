@@ -1,0 +1,17 @@
+theory Ground_Order_Resolution_Completeness
+  imports Ground_Order_resolution
+begin
+
+subsection \<open>Mode Construction\<close>
+
+context ground_order_resolution_calculus begin
+
+function epsilon :: "'f gterm clause \<Rightarrow> 'f gterm set" where
+  "epsilon C = {A | A C'. C \<in> N \<and>
+    C = add_mset L\<^sub>C C' \<and>
+    select C = {#} \<and>
+    is_strictly_maximal L\<^sub>C C \<and>
+    \<not> (\<Union>D \<in> {D \<in> N. D \<prec>\<^sub>c C}. epsilon D) \<TTurnstile> C}"
+  by simp_all
+end
+end
