@@ -10,6 +10,7 @@ theory Ground_Order_Resolution
     First_Order_Clause.Multiset_Extra
     First_Order_Clause.Clausal_Calculus_Extra
     First_Order_Clause.Selection_Function
+    First_Order_Clause.HOL_Extra
     Ground_Order_Base
 begin
 

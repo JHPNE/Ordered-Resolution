@@ -1,5 +1,5 @@
 theory Ground_Order_Resolution_Completeness
-  imports Ground_Order_resolution
+  imports Ground_Order_Resolution
 begin
 
 subsection \<open>Mode Construction\<close>
@@ -12,12 +12,6 @@ end
 
 context ground_order_resolution_calculus
 begin
-lemma wfP_less_lit[simp]: "wfP (\<prec>\<^sub>l)"
-  unfolding less_lit_def
-  using wfP_less_trm wfp_multp wfp_if_convertible_to_wfp by meson
-
-lemma wfP_less_cls[simp]: "wfP (\<prec>\<^sub>c)"
-  using wfP_less_lit wfp_multp by blast
 
 function epsilon :: "_ \<Rightarrow> 'f gterm clause \<Rightarrow> 'f gterm set" where
   "epsilon N C = {A | A C'. 
@@ -47,10 +41,31 @@ qed
                              
 declare epsilon.simps[simp del]
 
+
 lemma (in ground_order_resolution_calculus) epsilon_eq_empty_or_singleton:
   "epsilon N C = {} \<or> (\<exists>A. epsilon N C = {A})"
 proof -
-  have
-  
+  have "\<exists>\<^sub>\<le>\<^sub>1A. \<exists>C'. 
+    C = add_mset (Pos A) C' \<and> is_strictly_maximal (Pos A) C"
+    by (metis (mono_tags, lifting) Uniq_def literal.inject(1)
+        literal.order.Uniq_is_strictly_maximal_in_mset)
+  hence Uniq_epsilon: "\<exists>\<^sub>\<le>\<^sub>1A. \<exists>C'.
+    C \<in> N \<and>
+    C = add_mset (Pos A) C' \<and>
+    select C = {#} \<and>
+    is_strictly_maximal (Pos A) C \<and>
+    (let R\<^sub>C = \<Union>D \<in> {D \<in> N. D \<prec>\<^sub>c C}. epsilon {E \<in> N. E \<preceq>\<^sub>c D} D in
+      \<not> R\<^sub>C \<TTurnstile> C)"
+    using Uniq_antimono'
+    by (smt (verit) Uniq_def Uniq_prodI case_prod_conv)
+  show ?thesis
+    unfolding epsilon.simps[of N C]
+    using Collect_eq_if_Uniq[OF Uniq_epsilon]
+    by (smt (verit, best) Collect_cong Collect_empty_eq Uniq_def Uniq_epsilon case_prod_conv
+        insertCI mem_Collect_eq)
+qed
+
+lemma (in ground_order_resolution_calculus
+
 end
 end

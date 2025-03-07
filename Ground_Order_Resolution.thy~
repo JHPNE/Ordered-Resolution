@@ -181,4 +181,5 @@ next
     unfolding G_Inf_def
     by fast
 qed
+
 end
