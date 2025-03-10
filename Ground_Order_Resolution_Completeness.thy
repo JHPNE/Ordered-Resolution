@@ -66,8 +66,7 @@ proof -
 qed
 
 definition (in ground_order_resolution_calculus) rewrite_sys where
-  "rewrite_sys N C \<equiv> (\<Union>D \<in> {D \<in> N. D \<prec>\<^sub>c C}. epsilon N D)"
-
+  "rewrite_sys N C \<equiv> (\<Union>D \<in> {D \<in> N. D \<prec>\<^sub>c C}. epsilon {E \<in> N. E \<preceq>\<^sub>c D} D)"
 
 lemma (in ground_order_resolution_calculus) mem_epsilonE:
   assumes rule_in: "A \<in> epsilon N C"
@@ -90,6 +89,7 @@ lemma (in ground_order_resolution_calculus) pre_model_construction:
   assumes "saturated N" and "{#} \<notin> N" and C_in: "C \<in> N"
   shows
     "epsilon N C = {} \<longleftrightarrow> entails (rewrite_sys N C) C"
+    "(\<Union>D \<in> N. epsilon N D) \<TTurnstile> C"
     "\<And>D. D \<in> N \<Longrightarrow> C \<prec>\<^sub>c D \<Longrightarrow> entails (rewrite_sys N D) C"
     unfolding atomize_all atomize_conj atomize_imp
     using clause.order.wfp C_in
@@ -109,6 +109,15 @@ proof (induction C arbitrary: D rule: wfp_induct_rule)
       unfolding entails_def rewrite_sys_def
       by (metis (no_types) empty_iff equalityI mem_epsilonE rewrite_sys_def subsetI)
   next
+    assume "epsilon N C = {}"
+
+    have cond_conv: "(\<exists>L. L \<in># select C \<or> (select C = {#} \<and> is_maximal L C \<and> is_neg L)) \<longleftrightarrow>
+      (\<exists>A. Neg A \<in># C \<and> (Neg A \<in># select C \<or> select C = {#} \<and> is_maximal (Neg A) C))"
+      by (metis (no_types, opaque_lifting) is_pos_def literal.order.is_maximal_in_mset_iff
+          literal.disc(2) literal.exhaust mset_subset_eqD select_negative_literals select_subset)
+
+    show "entails (rewrite_sys N C) C"
+    proof (cases 
 
 lemma (in ground_order_resolution_calculus) model_construction:
   fixes
