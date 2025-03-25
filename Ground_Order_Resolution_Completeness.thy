@@ -4,57 +4,50 @@ begin
 
 subsection \<open>Mode Construction\<close>
 
-locale ground_order_resolution_calculus_completeness =
-  ground_order_resolution_calculus +
- fixes N :: "'f gterm clause set"
-begin
-end
-
 context ground_order_resolution_calculus
 begin
 
-function epsilon :: "_ \<Rightarrow> 'f gterm clause \<Rightarrow> 'f gterm set" where
-  "epsilon N C = {A | A C'. 
+context 
+  fixes N :: "'f gterm clause set"
+begin
+
+function epsilon :: "'f gterm clause \<Rightarrow> 'f gterm set" where
+  "epsilon C = {A | A C'. 
     C \<in> N \<and>
     C = add_mset (Pos A) C' \<and>
     select C = {#} \<and>
     is_strictly_maximal (Pos A) C \<and>
-    \<not> (\<Union>D \<in> {D \<in> N. D \<prec>\<^sub>c C}. epsilon {E \<in> N. E \<preceq>\<^sub>c D} D) \<TTurnstile> C}"
+    \<not> (\<Union>D \<in> {D \<in> N. D \<prec>\<^sub>c C}. epsilon D) \<TTurnstile> C}"
   by auto
 
 termination epsilon
-proof (relation "{((x1, x2), (y1, y2)). x2 \<prec>\<^sub>c y2}")
-  have "wfp (\<lambda>(x1, x2) (y1, y2). x2 \<prec>\<^sub>c y2)"
-  proof (rule wfp_if_convertible_to_wfp)
-    show "\<And>x y. (case x of (x1, x2) \<Rightarrow> \<lambda>(y1, y2). x2 \<prec>\<^sub>c y2) y \<Longrightarrow> (snd x) \<prec>\<^sub>c (snd y)"
-      by auto
-  next
-    show "wfp (\<prec>\<^sub>c)"
-      by auto
-  qed
-  thus "wf {((x1, x2), (y1, y2)). x2 \<prec>\<^sub>c y2}"
-    by (simp add: wfp_def)
+proof (relation "{(x, y). x \<prec>\<^sub>c y}")
+  show "wf {(x, y). x \<prec>\<^sub>c y}"
+    using wfp_def by blast
 next
-  show "\<And>N C x xa xb xc xd. xd \<in> {D \<in> N. D \<prec>\<^sub>c C} \<Longrightarrow> (({E \<in> N. E \<preceq>\<^sub>c xd}, xd), N, C) \<in> {((x1, x2), y1, y2). x2 \<prec>\<^sub>c y2}"
+  show "\<And>C D. D \<in> {D \<in> N. D \<prec>\<^sub>c C} \<Longrightarrow> (D, C) \<in> {(x, y). x \<prec>\<^sub>c y}"
     by simp
 qed
                              
 declare epsilon.simps[simp del]
 
+end
+
 lemma (in ground_order_resolution_calculus) epsilon_eq_empty_or_singleton:
   "epsilon N C = {} \<or> (\<exists>A. epsilon N C = {A})"
 proof -
-  have "\<exists>\<^sub>\<le>\<^sub>1A. \<exists>C'. 
-    C = add_mset (Pos A) C' \<and> is_strictly_maximal (Pos A) C"
+  have "\<exists>\<^sub>\<le>\<^sub>1A. is_strictly_maximal (Pos A) C"
     by (metis (mono_tags, lifting) Uniq_def literal.inject(1)
         literal.order.Uniq_is_strictly_maximal_in_mset)
+  hence "\<exists>\<^sub>\<le>\<^sub>1A. \<exists>C'. 
+    C = add_mset (Pos A) C' \<and> is_strictly_maximal (Pos A) C"
+    by (simp add: Uniq_def)
   hence Uniq_epsilon: "\<exists>\<^sub>\<le>\<^sub>1A. \<exists>C'.
     C \<in> N \<and>
     C = add_mset (Pos A) C' \<and>
     select C = {#} \<and>
     is_strictly_maximal (Pos A) C \<and>
-    (let R\<^sub>C = \<Union>D \<in> {D \<in> N. D \<prec>\<^sub>c C}. epsilon {E \<in> N. E \<preceq>\<^sub>c D} D in
-      \<not> R\<^sub>C \<TTurnstile> C)"
+    \<not> (\<Union>D \<in> {D \<in> N. D \<prec>\<^sub>c C}. epsilon N D) \<TTurnstile> C"
     using Uniq_antimono'
     by (smt (verit) Uniq_def Uniq_prodI case_prod_conv)
 
@@ -66,7 +59,7 @@ proof -
 qed
 
 definition (in ground_order_resolution_calculus) rewrite_sys where
-  "rewrite_sys N C \<equiv> (\<Union>D \<in> {D \<in> N. D \<prec>\<^sub>c C}. epsilon {E \<in> N. E \<preceq>\<^sub>c D} D)"
+  "rewrite_sys N C \<equiv> (\<Union>D \<in> {D \<in> N. D \<prec>\<^sub>c C}. epsilon N D)"
 
 lemma (in ground_order_resolution_calculus) mem_epsilonE:
   assumes rule_in: "A \<in> epsilon N C"
@@ -90,9 +83,10 @@ lemma (in ground_order_resolution_calculus) pre_model_construction:
   shows
     "epsilon N C = {} \<longleftrightarrow> entails (rewrite_sys N C) C"
     "(\<Union>D \<in> N. epsilon N D) \<TTurnstile> C"
-    "\<And>D. D \<in> N \<Longrightarrow> C \<prec>\<^sub>c D \<Longrightarrow> entails (rewrite_sys N D) C"
+    "D \<in> N \<Longrightarrow> C \<prec>\<^sub>c D \<Longrightarrow> entails (rewrite_sys N D) C"
     unfolding atomize_all atomize_conj atomize_imp
     using clause.order.wfp C_in
+
 proof (induction C arbitrary: D rule: wfp_induct_rule)
   case (less C)
   note IH = less.IH
@@ -111,13 +105,24 @@ proof (induction C arbitrary: D rule: wfp_induct_rule)
   next
     assume "epsilon N C = {}"
 
-    have cond_conv: "(\<exists>L. L \<in># select C \<or> (select C = {#} \<and> is_maximal L C \<and> is_neg L)) \<longleftrightarrow>
-      (\<exists>A. Neg A \<in># C \<and> (Neg A \<in># select C \<or> select C = {#} \<and> is_maximal (Neg A) C))"
-      by (metis (no_types, opaque_lifting) is_pos_def literal.order.is_maximal_in_mset_iff
-          literal.disc(2) literal.exhaust mset_subset_eqD select_negative_literals select_subset)
-
     show "entails (rewrite_sys N C) C"
-    proof (cases 
+    proof (cases "\<exists>A. Neg A \<in># C \<and> (Neg A \<in># select C \<or> select C = {#} \<and> is_maximal (Neg A) C)")
+      case ex_neg_lit_sel_or_max: True
+      then obtain A where
+        "Neg A \<in># C" and
+        sel_or_max: "Neg A \<in># select C \<or> select C = {#} \<and> is_maximal (Neg A) C"
+        by metis
+      then obtain C' where
+        C_def: "C = add_mset (Neg A) C'"
+        by (metis mset_add)
+
+      show ?thesis
+      proof (cases "A \<in> rewrite_sys N C")
+        case True
+        then obtain D where
+          "A \<in> epsilon N D" and "D \<in> N" and "D \<prec>\<^sub>c C"
+          unfolding rewrite_sys_def by auto
+        
 
 lemma (in ground_order_resolution_calculus) model_construction:
   fixes
