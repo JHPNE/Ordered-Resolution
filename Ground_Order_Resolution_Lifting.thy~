@@ -1,0 +1,34 @@
+theory Ground_Order_Resolution_Lifting
+  imports
+    Ground_Order_Resolution
+begin
+
+type_synonym 'f ground_atom = "'f gterm uprod"
+type_synonym ('f, 'v) atom = "('f, 'v) term uprod"
+
+definition to_ground :: "'expr \<Rightarrow> 'expr\<^sub>G" where
+"to_ground expr \<equiv> undefined"
+
+lemma (in ground_order_resolution_calculus) resolution_lifting:
+  fixes
+    D\<^sub>G C\<^sub>G :: "'f gterm clause" and
+    D C :: "('f, 'v) atom clause" and
+    \<gamma> :: "('f, 'v) subst"
+  defines
+    D\<^sub>G [simp]: "D\<^sub>G \<equiv> to_ground (D \<cdot> \<gamma>)" and
+    C\<^sub>G [simp]: "C\<^sub>G \<equiv> clause.to_ground (C \<cdot> \<gamma>)"
+  assumes
+    ground_eq_resolution: "resolution D\<^sub>G C\<^sub>G" and
+    D_grounding: "clause.is_ground (D \<cdot> \<gamma>)" and 
+    C_grounding: "clause.is_ground (C \<cdot> \<gamma>)" and
+    select: "clause.from_ground (select\<^sub>G D\<^sub>G) = (select D) \<cdot> \<gamma>" and
+    D_is_welltyped: "clause.is_welltyped \<V> D" and
+    \<gamma>_is_welltyped: "is_welltyped_on (clause.vars D) \<V> \<gamma>" and
+    \<V>: "infinite_variables_per_type \<V>"
+  obtains C'
+  where
+    "eq_resolution (D, \<V>) (C', \<V>)"
+    "Infer [D\<^sub>G] C\<^sub>G \<in> inference_groundings (Infer [(D, \<V>)] (C', \<V>))"
+    "C' \<cdot> \<gamma> = C \<cdot> \<gamma>"
+  using ground_eq_resolution
+end

@@ -4,5 +4,7 @@ session Ordered_Resolution = Saturation_Framework_Extensions +
     Saturation_Framework
     Saturation_Framework_Extensions
 
-  theories (* These theories contain the main results. *)
+theories (* These theories contain the main results. *)
+    Ground_Order_Resolution_Completeness
+    Ground_Order_Resolution_Soundness
     Ground_Order_Resolution
