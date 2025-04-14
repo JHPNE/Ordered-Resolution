@@ -377,13 +377,14 @@ proof unfold_locales
     (multp (\<prec>\<^sub>t) (mset_lit (map_literal term.from_ground l1)) (mset_lit (map_literal term.from_ground l2)))"
     apply (cases l1; cases l2)
     apply auto
-    sledgehammer
+    sorry
   }
 
   show less\<^sub>l\<^sub>G_rewrite: "(\<prec>\<^sub>m) = (\<prec>\<^sub>l\<^sub>G)"
     unfolding multiset_extension_def literal.order.multiset_extension_def R\<^sub>r_def
     unfolding term.order.less\<^sub>G_def literal.from_ground_def
     using multp_image_mset_image_msetI
+    sorry
 
   fix l\<^sub>G C\<^sub>G
   show "is_maximal_in_mset C\<^sub>G l\<^sub>G \<longleftrightarrow> ground_is_maximal l\<^sub>G C\<^sub>G"
@@ -412,22 +413,6 @@ next
         multp_image_mset_image_msetI)
 qed
 
-(* TODO: naming *)
-lemma less\<^sub>t_less\<^sub>l:
-  assumes "t\<^sub>1 \<prec>\<^sub>t t\<^sub>2"
-  shows
-    less\<^sub>t_less\<^sub>l_pos: "t\<^sub>1 \<approx> t\<^sub>3 \<prec>\<^sub>l t\<^sub>2 \<approx> t\<^sub>3" and
-    less\<^sub>t_less\<^sub>l_neg: "t\<^sub>1 !\<approx> t\<^sub>3 \<prec>\<^sub>l t\<^sub>2 !\<approx> t\<^sub>3"
-  using assms
-  unfolding less\<^sub>l_def
-  by (auto simp: multp_add_mset multp_add_mset')
-
-lemma literal_order_less_if_all_lesseq_ex_less_set:
-  assumes
-    "\<forall>t \<in> set_uprod (atm_of l). t \<cdot>t \<sigma>' \<preceq>\<^sub>t t \<cdot>t \<sigma>"
-    "\<exists>t \<in> set_uprod (atm_of l). t \<cdot>t \<sigma>' \<prec>\<^sub>t t \<cdot>t \<sigma>"
-  shows "l \<cdot>l \<sigma>' \<prec>\<^sub>l l \<cdot>l \<sigma>"
-  using literal.order.less_if_all_lesseq_ex_less[OF assms[folded set_mset_set_uprod]].
 
 lemma less\<^sub>c_add_mset:
   assumes "l \<prec>\<^sub>l l'" "C \<preceq>\<^sub>c C'"
@@ -441,9 +426,153 @@ lemmas less\<^sub>c_add_same [simp] =
 
 end
 
+(* clause typing *)
+
+locale clause_typing = "term": typing term_welltyped
+  for term_welltyped
+begin
+
+
+sublocale literal: typing_lifting where
+  sub_welltyped = term_welltyped and to_set = set_literal
+  by unfold_locales
+
+sublocale clause: mulitset_typing_lifting where 
+  sub_welltyped = literal.welltyped
+  by unfold_locales
+
+end
+
+(* Nonground typing *)
+
+locale nonground_typing =
+  nonground_clause +
+  nonground_term_typing \<F>
+  for \<F> :: "('f, 'ty) fun_types"
+begin
+
+sublocale clause_typing "welltyped \<V>"
+  by unfold_locales
+
+
+sublocale literal: term_based_nonground_typing_lifting where
+  base_welltyped = welltyped and sub_vars = term.vars and sub_subst = "(\<cdot>t)" and
+  map = map_literal and to_set = set_literal and sub_welltyped = welltyped and
+  sub_to_ground = term.to_ground and sub_from_ground = term.from_ground and
+  to_ground_map = map_literal and from_ground_map = map_literal and ground_map = map_literal and
+  to_set_ground = set_literal
+  by unfold_locales
+
+sublocale clause: term_based_nonground_typing_lifting where
+  base_welltyped = welltyped and sub_vars = literal.vars and sub_subst = "(\<cdot>l)" and
+  map = image_mset and to_set = set_mset and sub_welltyped = literal.welltyped and
+  sub_to_ground = literal.to_ground and sub_from_ground = literal.from_ground and
+  to_ground_map = image_mset and from_ground_map = image_mset and ground_map = image_mset and
+  to_set_ground = set_mset
+  by unfold_locales
+
+end
+
+locale nonground_inhabited_typing =
+  nonground_typing \<F> +
+  nonground_term_inhabited_typing \<F>
+  for \<F> :: "('f, 'ty) fun_types"
+begin
+
+sublocale literal: term_based_nonground_inhabited_typing_lifting where
+  base_welltyped = welltyped and sub_vars = term.vars and 
+  sub_subst = "(\<cdot>t)" and map = map_literal and to_set = set_literal and
+  sub_welltyped = welltyped and sub_to_ground = term.to_ground and
+  sub_from_ground = term.from_ground and to_ground_map = map_literal and
+  from_ground_map = map_literal and ground_map = map_literal and to_set_ground = set_literal
+  by unfold_locales
+
+sublocale clause: term_based_nonground_inhabited_typing_lifting where
+  base_welltyped = welltyped and
+  sub_vars = literal.vars and sub_subst = "(\<cdot>l)" and map = image_mset and to_set = set_mset and
+  sub_welltyped = literal.welltyped and
+  sub_to_ground = literal.to_ground and sub_from_ground = literal.from_ground and
+  to_ground_map = image_mset and from_ground_map = image_mset and ground_map = image_mset and
+  to_set_ground = set_mset
+  by unfold_locales
+
+end
+
+type_synonym 'f ground_select = "'f gterm clause \<Rightarrow> 'f gterm clause"
+type_synonym ('f, 'v) select = "('f, 'v) term clause \<Rightarrow> ('f, 'v) term clause"
+
+context nonground_clause
+begin
+
+definition is_select_grounding :: "('f, 'v) select \<Rightarrow> 'f ground_select \<Rightarrow> bool" where
+  "is_select_grounding select select\<^sub>G \<equiv> \<forall>C\<^sub>G. \<exists>C \<gamma>.
+    clause.is_ground (C \<cdot> \<gamma>) \<and>
+    C\<^sub>G = clause.to_ground (C \<cdot> \<gamma>) \<and>
+    select\<^sub>G C\<^sub>G = clause.to_ground ((select C) \<cdot> \<gamma>)"
+
+end
+
+locale nonground_selection_function =
+  nonground_clause +
+  selection_function select
+  for select :: "('f, 'v) term clause \<Rightarrow> ('f, 'v) term clause"
+begin
+
+abbreviation is_grounding :: "'f ground_select \<Rightarrow> bool" where
+  "is_grounding select\<^sub>G \<equiv> is_select_grounding select select\<^sub>G"
+
+definition select\<^sub>G\<^sub>s where
+  "select\<^sub>G\<^sub>s = { select\<^sub>G. is_grounding select\<^sub>G }"
+
+definition select\<^sub>G_simple where
+  "select\<^sub>G_simple C = clause.to_ground (select (clause.from_ground C))"
+
+lemma select\<^sub>G_simple: "is_grounding select\<^sub>G_simple"
+  unfolding is_select_grounding_def select\<^sub>G_simple_def
+  by (metis clause.from_ground_inverse clause.ground_is_ground clause.subst_id_subst)
+
+lemma select_is_ground:
+  assumes "clause.is_ground C"
+  shows "clause.is_ground (select C)"
+  using select_subset sub_ground_clause assms
+  by metis
+
+lemma is_ground_in_selection:
+  assumes "l \<in># select (clause.from_ground C)"
+  shows "literal.is_ground l"
+  using assms clause.sub_in_ground_is_ground select_subset
+  by blast
+
+lemma ground_literal_in_selection:
+  assumes "clause.is_ground C" "l\<^sub>G \<in># clause.to_ground C"
+  shows "literal.from_ground l\<^sub>G \<in># C"
+  using assms
+  by (metis clause.to_ground_inverse clause.ground_sub_in_ground)
+
+lemma select_ground_subst:
+  assumes "clause.is_ground (C \<cdot> \<gamma>)"
+  shows "clause.is_ground (select C \<cdot> \<gamma>)"
+  using assms
+  by (metis image_mset_subseteq_mono select_subset sub_ground_clause clause.subst_def)
+
+lemma select_neg_subst:
+  assumes "l \<in># select C \<cdot> \<gamma>"
+  shows "is_neg l"
+  using assms subst_neg_stable select_negative_literals
+  unfolding clause.subst_def
+  by blast
+
+lemma select_vars_subset: "\<And>C. clause.vars (select C) \<subseteq> clause.vars C"
+  by (simp add: clause_submset_vars_clause_subset select_subset)
+
+end
+
+type_synonym ('f, 'v, 'ty) typed_clause = "('f, 'v) term clause \<times> ('v, 'ty) var_types"
+
+
 locale resolution_calculus =
   nonground_inhabited_typing \<F> +
-  nonground_equality_order less\<^sub>t +
+  nonground_order less\<^sub>t +
   nonground_selection_function select +
   tiebreakers: tiebreakers tiebreakers
 for
@@ -453,28 +582,44 @@ for
   tiebreakers :: "('f, 'v) tiebreakers"
 begin
 
-inductive resolution ::
-  "'f gterm clause \<Rightarrow> 'f gterm clause \<Rightarrow> 'f gterm clause \<Rightarrow> bool"
-where
-  resolutionI: "
-    C = add_mset L\<^sub>C C' \<Longrightarrow>
-    D = add_mset L\<^sub>D D' \<Longrightarrow>
-    L\<^sub>C = (Neg t) \<Longrightarrow>
-    L\<^sub>D = (Pos t) \<Longrightarrow>
-    D \<prec>\<^sub>c C \<Longrightarrow>
-    select C = {#} \<and> is_maximal L\<^sub>C C \<or> ( L\<^sub>C \<in># (select C)) \<Longrightarrow>
-    select D = {#} \<Longrightarrow>    
-    is_strictly_maximal L\<^sub>D D \<Longrightarrow>
-    R = (C' + D') \<Longrightarrow>
-    resolution C D R"
-
 inductive factoring ::
-  "'f gterm clause \<Rightarrow> 'f gterm clause \<Rightarrow> bool"
+  "('f, 'v, 'ty) typed_clause \<Rightarrow> ('f, 'v, 'ty) typed_clause \<Rightarrow> bool"
 where
   factoringI: "
-  C = add_mset L\<^sub>1 (add_mset L\<^sub>1 C') \<Longrightarrow>
-  L\<^sub>1 = (Pos t) \<Longrightarrow>
-  select C = {#} \<Longrightarrow>
-  is_maximal L\<^sub>1 C \<Longrightarrow>
-  D = add_mset L\<^sub>1 C' \<Longrightarrow>
-  factoring C D"
+  C = add_mset L\<^sub>1 (add_mset L\<^sub>2 C') \<Longrightarrow>
+  L\<^sub>1 = (Pos t\<^sub>1) \<Longrightarrow>
+  L\<^sub>2 = (Pos t\<^sub>2) \<Longrightarrow>
+  D = add_mset L\<^sub>1 C' \<cdot> \<mu> \<Longrightarrow>
+  factoring (C, \<V>) (D, \<V>)"
+if
+  "select C = {#}"
+  "is_maximal (L\<^sub>1 \<cdot>l \<mu>) (C \<cdot> \<mu>)"
+  "welltyped_imgu_on (clause.vars C) \<V> t\<^sub>1 t\<^sub>2 \<mu>"
+
+inductive resolution ::
+  "('f, 'v, 'ty) typed_clause \<Rightarrow> ('f, 'v, 'ty) typed_clause \<Rightarrow> ('f, 'v, 'ty) typed_clause \<Rightarrow> bool"
+where
+  resolutionI: "
+    C = add_mset L\<^sub>1 C' \<Longrightarrow>
+    D = add_mset L\<^sub>2 D' \<Longrightarrow>
+    L\<^sub>1 = (Neg t\<^sub>1) \<Longrightarrow>
+    L\<^sub>2 = (Pos t\<^sub>2) \<Longrightarrow>
+    R = (C' \<cdot> \<rho>\<^sub>1 + D' \<cdot> \<rho>\<^sub>2) \<cdot> \<mu> \<Longrightarrow>
+    resolution (C, \<V>\<^sub>1) (D, \<V>\<^sub>2) (R, \<V>\<^sub>3)"
+if
+  "infinite_variables_per_type \<V>\<^sub>1"
+  "infinite_variables_per_type \<V>\<^sub>2"
+  "term_subst.is_renaming \<rho>\<^sub>1"
+  "term_subst.is_renaming \<rho>\<^sub>2"
+  "clause.vars (D \<cdot> \<rho>\<^sub>2) \<inter> clause.vars (C \<cdot> \<rho>\<^sub>1) = {}"
+  "welltyped_imgu_on (clause.vars (D \<cdot> \<rho>\<^sub>2) \<union> clause.vars (C \<cdot> \<rho>\<^sub>1)) \<V>\<^sub>3 (t\<^sub>1 \<cdot>t \<rho>\<^sub>1) (t\<^sub>2 \<cdot>t \<rho>\<^sub>2) \<mu>"
+  "\<not> (C \<cdot> \<rho>\<^sub>1 \<odot> \<mu> \<preceq>\<^sub>c D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>)"
+  "select C = {#} \<and> is_maximal (L\<^sub>1 \<cdot>l \<rho>\<^sub>1 \<odot> \<mu>) (C\<cdot> \<rho>\<^sub>1 \<odot> \<mu>) \<or> ( L\<^sub>1 \<cdot>l \<rho>\<^sub>1 \<odot> \<mu> \<in># (select C))"
+  "select D = {#}"
+  "is_strictly_maximal (l\<^sub>2 \<cdot>l \<rho>\<^sub>2 \<odot> \<mu>) (D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>)"
+  "\<forall>x \<in> clause.vars D. \<V>\<^sub>2 x = \<V>\<^sub>3 (term.rename \<rho>\<^sub>2 x)"
+  "\<forall>x \<in> clause.vars C. \<V>\<^sub>1 x = \<V>\<^sub>3 (term.rename \<rho>\<^sub>1 x)"
+  "is_welltyped_on (clause.vars C) \<V>\<^sub>1 \<rho>\<^sub>1"
+  "is_welltyped_on (clause.vars D) \<V>\<^sub>2 \<rho>\<^sub>2"
+
+end
