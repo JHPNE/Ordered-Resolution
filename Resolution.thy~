@@ -454,7 +454,6 @@ begin
 sublocale clause_typing "welltyped \<V>"
   by unfold_locales
 
-
 sublocale literal: term_based_nonground_typing_lifting where
   base_welltyped = welltyped and sub_vars = term.vars and sub_subst = "(\<cdot>t)" and
   map = map_literal and to_set = set_literal and sub_welltyped = welltyped and
@@ -470,7 +469,6 @@ sublocale clause: term_based_nonground_typing_lifting where
   to_ground_map = image_mset and from_ground_map = image_mset and ground_map = image_mset and
   to_set_ground = set_mset
   by unfold_locales
-
 end
 
 locale nonground_inhabited_typing =
@@ -567,8 +565,88 @@ lemma select_vars_subset: "\<And>C. clause.vars (select C) \<subseteq> clause.va
 
 end
 
-type_synonym ('f, 'v, 'ty) typed_clause = "('f, 'v) term clause \<times> ('v, 'ty) var_types"
+(* Grounded Selection Function *)
 
+locale grounded_selection_function =
+  nonground_selection_function select +
+  nonground_typing \<F>
+  for
+    select :: "('f, 'v :: infinite) term clause \<Rightarrow> ('f, 'v) term clause" and
+    \<F> :: "('f, 'ty) fun_types" +
+fixes select\<^sub>G
+assumes select\<^sub>G: "is_select_grounding select select\<^sub>G"
+begin
+
+lemma select\<^sub>G_subset: "select\<^sub>G C \<subseteq># C"
+  using select\<^sub>G
+  unfolding is_select_grounding_def
+  by (metis select_subset clause.to_ground_def image_mset_subseteq_mono clause.subst_def)
+
+lemma select\<^sub>G_negative_literals:
+  assumes "l\<^sub>G \<in># select\<^sub>G C\<^sub>G"
+  shows "is_neg l\<^sub>G"
+proof -
+  obtain C \<gamma> where
+    is_ground: "clause.is_ground (C \<cdot> \<gamma>)" and
+    select\<^sub>G: "select\<^sub>G C\<^sub>G = clause.to_ground (select C \<cdot> \<gamma>)"
+    using select\<^sub>G
+    unfolding is_select_grounding_def
+    by blast
+
+  show ?thesis
+    using
+      ground_literal_in_selection[
+        OF select_ground_subst[OF is_ground] assms[unfolded select\<^sub>G],
+        THEN select_neg_subst
+        ]
+    by simp
+
+qed
+
+sublocale ground: selection_function select\<^sub>G
+  by unfold_locales (simp_all add: select\<^sub>G_subset select\<^sub>G_negative_literals)
+
+end
+
+(* Nonground Inference *)
+
+locale nonground_inference = nonground_clause
+begin
+
+sublocale inference: term_based_lifting where
+  sub_subst = clause.subst and sub_vars = clause.vars and map = map_inference and
+  to_set = set_inference and sub_to_ground = clause.to_ground and
+  sub_from_ground = clause.from_ground and to_ground_map = map_inference and
+  from_ground_map = map_inference and ground_map = map_inference and to_set_ground = set_inference
+  by unfold_locales
+
+notation inference.subst (infixl "\<cdot>\<iota>" 67)
+
+lemma vars_inference [simp]:
+  "inference.vars (Infer Ps C) = \<Union> (clause.vars ` set Ps) \<union> clause.vars C"
+  unfolding inference.vars_def
+  by auto
+
+lemma subst_inference [simp]:
+  "Infer Ps C \<cdot>\<iota> \<sigma> = Infer (map (\<lambda>P. P \<cdot> \<sigma>) Ps) (C \<cdot> \<sigma>)"
+  unfolding inference.subst_def
+  by simp_all
+
+lemma inference_from_ground_clause_from_ground [simp]:
+  "inference.from_ground (Infer Ps C) = Infer (map clause.from_ground Ps) (clause.from_ground C)"
+  by (simp add: inference.from_ground_def)
+
+lemma inference_to_ground_clause_to_ground [simp]:
+  "inference.to_ground (Infer Ps C) = Infer (map clause.to_ground Ps) (clause.to_ground C)"
+  by (simp add: inference.to_ground_def)
+
+lemma inference_is_ground_clause_is_ground [simp]:
+  "inference.is_ground (Infer Ps C) \<longleftrightarrow> list_all clause.is_ground Ps \<and> clause.is_ground C"
+  by (auto simp: Ball_set)
+
+end
+
+type_synonym ('f, 'v, 'ty) typed_clause = "('f, 'v) term clause \<times> ('v, 'ty) var_types"
 
 locale resolution_calculus =
   nonground_inhabited_typing \<F> +
@@ -621,5 +699,18 @@ if
   "\<forall>x \<in> clause.vars C. \<V>\<^sub>1 x = \<V>\<^sub>3 (term.rename \<rho>\<^sub>1 x)"
   "is_welltyped_on (clause.vars C) \<V>\<^sub>1 \<rho>\<^sub>1"
   "is_welltyped_on (clause.vars D) \<V>\<^sub>2 \<rho>\<^sub>2"
+
+abbreviation factoring_inferences where
+"factoring_inferences \<equiv> { Infer [C] D | C D. factoring C D}"
+
+abbreviation resolution_inferences where
+"resolution_inferences \<equiv> { Infer [C, D] R | C D R. resolution C D R}"
+
+definition inferences :: "('f, 'v, 'ty) typed_clause inference set" where
+"inferences \<equiv> resolution_inferences \<union> factoring_inferences"
+
+abbreviation bottom\<^sub>F :: "('f, 'v, 'ty) typed_clause set" ("\<bottom>\<^sub>F") where
+  "bottom\<^sub>F \<equiv> {({#}, \<V>) | \<V>. infinite_variables_per_type \<V> }"
+end
 
 end
