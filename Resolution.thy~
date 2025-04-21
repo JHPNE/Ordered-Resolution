@@ -648,6 +648,42 @@ end
 
 type_synonym ('f, 'v, 'ty) typed_clause = "('f, 'v) term clause \<times> ('v, 'ty) var_types"
 
+(* Tiebreakers *)
+
+type_synonym ('f, 'v) tiebreakers = 
+  "'f gterm clause \<Rightarrow> ('f, 'v) term clause \<Rightarrow> ('f, 'v) term clause \<Rightarrow> bool"
+
+locale tiebreakers =
+  fixes tiebreakers :: "('f, 'v) tiebreakers"
+  assumes "\<And>C\<^sub>G. wfp (tiebreakers C\<^sub>G) \<and> transp (tiebreakers C\<^sub>G)"
+begin
+
+sublocale wellfounded_strict_order "tiebreakers C\<^sub>G"
+  using tiebreakers_axioms tiebreakers_def wfp_imp_asymp
+  by unfold_locales auto  
+
+end
+
+type_synonym ('f, 'v, 'ty) typed_tiebreakers = 
+  "'f gterm clause \<Rightarrow> ('f, 'v, 'ty) typed_clause \<Rightarrow> ('f, 'v, 'ty) typed_clause \<Rightarrow> bool"
+
+context tiebreakers
+begin
+
+abbreviation typed_tiebreakers :: "('f, 'v, 'ty) typed_tiebreakers" where
+  "typed_tiebreakers C\<^sub>G C\<^sub>1 C\<^sub>2 \<equiv> tiebreakers C\<^sub>G (fst C\<^sub>1) (fst C\<^sub>2)"
+
+sublocale typed: wellfounded_strict_order "typed_tiebreakers C\<^sub>G"
+proof unfold_locales
+
+  show "wfp (typed_tiebreakers C\<^sub>G)"
+    by (meson wfp wfp_if_convertible_to_wfp)
+
+qed (auto simp: transp_on_def asympI)
+ 
+end
+
+
 locale resolution_calculus =
   nonground_inhabited_typing \<F> +
   nonground_order less\<^sub>t +

@@ -1,0 +1,186 @@
+theory Resolution_Completeness
+  imports
+    Grounded_Resolution
+    Ground_Order_Resolution_Completeness
+
+    First_Order_Clause.Nonground_Entailment
+begin
+
+section \<open>Completeness\<close>
+
+context grounded_resolution_calculus
+begin
+
+subsection \<open>Liftings\<close>
+
+lemma factoring_lifting:
+  fixes
+    D\<^sub>G C\<^sub>G :: "'f gterm clause" and
+    D C :: "('f, 'v) term clause" and
+    \<gamma> :: "('f, 'v) subst"
+  defines
+    [simp]: "D\<^sub>G \<equiv> clause.to_ground (D \<cdot> \<gamma>)" and
+    [simp]: "C\<^sub>G \<equiv> clause.to_ground (C \<cdot> \<gamma>)"
+  assumes
+    ground_factoring: "ground.factoring D\<^sub>G C\<^sub>G" and
+    D_grounding: "clause.is_ground (D \<cdot> \<gamma>)" and
+    C_grounding: "clause.is_ground (C \<cdot> \<gamma>)" and
+    select: "clause.from_ground (select\<^sub>G D\<^sub>G) = (select D) \<cdot> \<gamma>" and
+    D_is_welltyped: "clause.is_welltyped \<V> D" and
+    \<gamma>_is_welltyped: "is_welltyped_on (clause.vars D) \<V> \<gamma>" and
+    \<V>: "infinite_variables_per_type \<V>"
+  obtains C'
+  where
+    "factoring (D, \<V>) (C', \<V>)"
+    "Infer [D\<^sub>G] C\<^sub>G \<in> inference_ground_instances (Infer [(D, \<V>)] (C', \<V>))"
+    "C' \<cdot> \<gamma> = C \<cdot> \<gamma>"
+  using ground_factoring
+proof(cases D\<^sub>G C\<^sub>G rule: ground.factoring.cases)
+  case ground_factoringI: (factoringI L\<^sub>G D\<^sub>G' t\<^sub>G)
+
+  have "D \<noteq> {#}"
+    using ground_factoringI(1)
+    by auto
+
+  then obtain l\<^sub>1 where
+    l\<^sub>1_is_maximal: "is_maximal l\<^sub>1 D" and
+    l\<^sub>1_\<gamma>_is_maximal: "is_maximal (l\<^sub>1 \<cdot>l \<gamma>) (D \<cdot> \<gamma>)"
+    using that obtain_maximal_literal D_grounding
+    by blast
+
+  obtain t\<^sub>1 where
+    l\<^sub>1: "l\<^sub>1 = (Pos t\<^sub>1)" and
+    l\<^sub>1_\<gamma>: "l\<^sub>1 \<cdot>l \<gamma> = (Pos (term.from_ground t\<^sub>G))" and
+    t\<^sub>1_\<gamma>: "t\<^sub>1 \<cdot>t \<gamma> = term.from_ground t\<^sub>G"
+  proof-
+    have "is_maximal (literal.from_ground L\<^sub>G) (D \<cdot> \<gamma>)"
+      using D_grounding ground_factoringI(4)
+      by auto
+
+    then have "l\<^sub>1 \<cdot>l \<gamma> = (Pos (term.from_ground t\<^sub>G))"
+      unfolding ground_factoringI(2)
+      using unique_maximal_in_ground_clause[OF D_grounding l\<^sub>1_\<gamma>_is_maximal]
+      by simp
+
+    then show ?thesis
+      using that
+      unfolding ground_factoringI(2)
+      by (metis Neg_atm_of_iff clause_safe_unfolds(9) literal.collapse(1) literal.sel(1)
+          subst_polarity_stable(2))
+  qed
+
+  obtain l\<^sub>2 D' where
+    l\<^sub>2_\<gamma>: "l\<^sub>2 \<cdot>l \<gamma> = Pos (term.from_ground t\<^sub>G)" and
+    D: "D = add_mset l\<^sub>1 (add_mset l\<^sub>2 D')"
+  proof-
+    obtain D'' where D: "D = add_mset l\<^sub>1 D''"
+      using maximal_in_clause[OF l\<^sub>1_is_maximal]
+      by (meson multi_member_split)
+
+    moreover have "D \<cdot> \<gamma> = clause.from_ground (add_mset L\<^sub>G ( add_mset L\<^sub>G D\<^sub>G'))"
+      using ground_factoringI(1) C\<^sub>G_def
+      by (metis D\<^sub>G_def D_grounding clause.to_ground_inverse)
+
+    ultimately have "D'' \<cdot> \<gamma> = add_mset (literal.from_ground L\<^sub>G) (clause.from_ground D\<^sub>G')"
+      using l\<^sub>1_\<gamma>
+      by (simp add: ground_factoringI(2))
+
+    then obtain l\<^sub>2 where "l\<^sub>2 \<cdot>l \<gamma> = Pos (term.from_ground t\<^sub>G)" "l\<^sub>2 \<in># D''"
+      unfolding clause.subst_def ground_factoringI
+      using msed_map_invR
+      by force
+
+    then show ?thesis
+      using that
+      unfolding D
+      by (metis mset_add)
+  qed
+
+  then obtain t\<^sub>2 where
+    l\<^sub>2: "l\<^sub>2 = (Pos t\<^sub>2)" and
+    t\<^sub>2_\<gamma>: "t\<^sub>2 \<cdot>t \<gamma> = term.from_ground t\<^sub>G"
+    unfolding ground_factoringI(2)
+    by (metis clause_safe_unfolds(9) is_pos_def literal.sel(1) subst_polarity_stable(2))
+   
+
+  have D'_\<gamma>: "D' \<cdot> \<gamma> = clause.from_ground D\<^sub>G'"
+    using D D_grounding ground_factoringI(1,2,3) l\<^sub>1_\<gamma> l\<^sub>2_\<gamma>
+    by force
+
+  obtain \<mu> \<sigma> where \<gamma>: "\<gamma> = \<mu> \<odot> \<sigma>" and imgu: "welltyped_imgu_on (clause.vars D) \<V> t\<^sub>1 t\<^sub>2 \<mu>"
+  proof-
+    have unified: "t\<^sub>1 \<cdot>t \<gamma> = t\<^sub>2 \<cdot>t \<gamma>"
+      unfolding t\<^sub>1_\<gamma> t\<^sub>2_\<gamma> ..
+
+    then obtain \<tau> where "welltyped \<V> (t\<^sub>1 \<cdot>t \<gamma>) \<tau>" "welltyped \<V> (t\<^sub>2 \<cdot>t \<gamma>) \<tau>"
+      using D_is_welltyped \<gamma>_is_welltyped
+      unfolding D l\<^sub>1 l\<^sub>2
+      apply auto
+      by (meson literal.is_welltyped_def literal.set_intros(1))
+
+    then have welltyped: "welltyped \<V> t\<^sub>1 \<tau>" "welltyped \<V> t\<^sub>2 \<tau>"
+      using \<gamma>_is_welltyped
+      unfolding D l\<^sub>1 l\<^sub>2
+      by simp_all
+
+    then show ?thesis
+      using obtain_welltyped_imgu_on[OF unified welltyped] that
+      by metis
+  qed
+
+  let ?C'' = "add_mset l\<^sub>1 D'"
+  let ?C' = "?C'' \<cdot> \<mu>"
+
+  show ?thesis
+  proof(rule that)
+
+    show factoring: "factoring (D, \<V>) (?C', \<V>)"
+    proof (rule factoringI; (rule D l\<^sub>1 l\<^sub>2 imgu refl \<V>)?)
+      show "select D = {#}"
+        using ground_factoringI(3) select
+        by simp
+    next
+      have "l\<^sub>1 \<cdot>l \<mu> \<in># D \<cdot> \<mu>"
+        using l\<^sub>1_is_maximal clause.subst_in_to_set_subst maximal_in_clause
+        by blast
+
+      then have "is_maximal (l\<^sub>1 \<cdot>l \<mu>) (D \<cdot> \<mu>)"
+        using is_maximal_if_grounding_is_maximal D_grounding l\<^sub>1_\<gamma>_is_maximal
+        unfolding \<gamma>
+        by auto
+    next
+      have "(\<exists>\<tau>. welltyped \<V> t\<^sub>1 \<tau>) \<and> is_welltyped_on (clause.vars D) \<V> \<mu> \<and> term.is_imgu \<mu> {{t\<^sub>1, t\<^sub>1}}"
+        sorry
+    next
+      show "D = add_mset l\<^sub>1 (add_mset l\<^sub>1 D')"
+      proof-
+        have "D = add_mset l\<^sub>1 (add_mset l\<^sub>2 D')"
+          by (rule D)
+        moreover have "l\<^sub>1 = l\<^sub>2"
+        proof-
+          have "t\<^sub>1 \<cdot>t \<mu> = t\<^sub>2 \<cdot>t \<mu>"
+            using imgu term.subst_imgu_eq_subst_imgu 
+            by blast
+          moreover have "l\<^sub>1 = Pos t\<^sub>1" "l\<^sub>2 = Pos t\<^sub>2"
+            by (rule l\<^sub>1, rule l\<^sub>2)
+          ultimately show ?thesis
+            sorry   
+        qed
+        ultimately show ?thesis
+          sorry
+      qed
+    qed
+
+  show C'_\<gamma>: "?C' \<cdot> \<gamma> = C \<cdot> \<gamma>"
+
+qed
+      
+      
+
+  
+qed
+  
+
+
+end
+end
