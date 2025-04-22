@@ -35,7 +35,7 @@ where
     L\<^sub>C = (Neg t) \<Longrightarrow>
     L\<^sub>D = (Pos t) \<Longrightarrow>
     D \<prec>\<^sub>c C \<Longrightarrow>
-    select C = {#} \<and> is_maximal L\<^sub>C C \<or> ( L\<^sub>C \<in># (select C)) \<Longrightarrow>
+    select C = {#} \<and> is_maximal L\<^sub>C C \<or> is_maximal L\<^sub>C (select C) \<Longrightarrow>
     select D = {#} \<Longrightarrow>    
     is_strictly_maximal L\<^sub>D D \<Longrightarrow>
     R = (C' + D') \<Longrightarrow>
