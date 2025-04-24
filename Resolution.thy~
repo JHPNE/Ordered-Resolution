@@ -103,6 +103,7 @@ lemmas clause_safe_unfolds =
   literal_from_ground_polarity_stable
   subst_literal
   vars_literal
+
 end
 
 (* Nonground Order without equality *)

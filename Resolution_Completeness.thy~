@@ -258,6 +258,7 @@ lemma resolution_lifting:
     ground_resolution: "ground.resolution C\<^sub>G D\<^sub>G R\<^sub>G" and
     \<rho>\<^sub>1: "term_subst.is_renaming \<rho>\<^sub>1" and
     \<rho>\<^sub>2: "term_subst.is_renaming \<rho>\<^sub>2" and
+    rename_apart: "clause.vars (C \<cdot> \<rho>\<^sub>1) \<inter> clause.vars (D \<cdot> \<rho>\<^sub>2) = {}" and
     C_grounding: "clause.is_ground (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)" and
     D_grounding: "clause.is_ground (D \<cdot> \<rho>\<^sub>2 \<odot> \<gamma>)" and
     R_grounding: "clause.is_ground (R \<cdot> \<gamma>)" and
@@ -295,43 +296,219 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
 
   obtain l\<^sub>C where
     l\<^sub>C_\<gamma>: "l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma> = literal.from_ground L\<^sub>G\<^sub>C" and
-    l\<^sub>C_in_C: "l\<^sub>C \<in># C" and
-    l\<^sub>C_selected: "?select\<^sub>G_not_empty \<Longrightarrow> l\<^sub>C \<in># (select C)" and
-    l\<^sub>C_\<gamma>_selected: "?select\<^sub>G_not_empty \<Longrightarrow> (l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma>) \<in># (select (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>))" and
     l\<^sub>C_is_maximal: "?select\<^sub>G_empty \<Longrightarrow> is_maximal l\<^sub>C C" and
-    l\<^sub>C_\<gamma>_is_maximal: "?select\<^sub>G_empty \<Longrightarrow> is_maximal (l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma>) (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)"
+    l\<^sub>C_\<gamma>_is_maximal: "?select\<^sub>G_empty \<Longrightarrow> is_maximal (l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma>) (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)" and
+    l\<^sub>C_selected: "?select\<^sub>G_not_empty \<Longrightarrow> is_maximal l\<^sub>C (select C)" and
+    l\<^sub>C_\<gamma>_selected: "?select\<^sub>G_not_empty \<Longrightarrow>is_maximal (l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma>) (select (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>))" and   
+    l\<^sub>C_in_C: "l\<^sub>C \<in># C"
   proof-
-    obtain max_l\<^sub>C where
-      "is_maximal max_l\<^sub>C C" and
-      is_max_in_C_\<gamma>: "is_maximal (max_l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma>) (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)"
-    proof-
-      have C_not_empty: "C \<noteq> {#}"
+    have C_not_empty: "C \<noteq> {#}"
       using ground_resolutionI(1)
       by auto
 
-    then show ?thesis
-      using that C_grounding obtain_maximal_literal
+    then obtain max_l where
+      "is_maximal max_l C" and
+      is_max_in_C_\<gamma>: "is_maximal (max_l \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma>) (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)"
+      using that C_grounding obtain_maximal_literal C_not_empty
       by blast
-  qed
 
-  moreover then have "max_l\<^sub>C \<in># C"
-    unfolding is_maximal_def
-    by blast
-
-  moreover have "max_l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma> = (Neg (term.from_ground t\<^sub>G))" if ?select\<^sub>G_empty
-  proof(rule unique_maximal_in_ground_clause[OF C_grounding is_max_in_C_\<gamma>])
-    have "ground_is_maximal L\<^sub>G\<^sub>C C\<^sub>G"
-      using ground_resolutionI(3) ground_resolutionI(6) that
+    moreover then have "max_l \<in># C" 
       unfolding is_maximal_def
-      by simp
+      by blast
 
-    then show "is_maximal (Neg (term.from_ground t\<^sub>G)) (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)"
-        using C_grounding
+    moreover have "max_l \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma> = literal.from_ground L\<^sub>G\<^sub>C" if ?select\<^sub>G_empty
+    proof-
+      have "ground_is_maximal L\<^sub>G\<^sub>C C\<^sub>G"
+        using ground_resolutionI(6) that
+        unfolding is_maximal_def
+        by simp
+
+      then show ?thesis
+        using unique_maximal_in_ground_clause[OF C_grounding is_max_in_C_\<gamma>] C_grounding
         unfolding ground_resolutionI(3)
         by simp
     qed
 
-    moreover obtain selected_l\<^sub>C where
+    moreover obtain selected_l where
+      "is_maximal selected_l (select C)"
+      "is_maximal (selected_l \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma>) (select C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)"
+      "selected_l \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma> = literal.from_ground L\<^sub>G\<^sub>C"
+    if ?select\<^sub>G_not_empty
+    proof-
+      have "is_maximal (literal.from_ground L\<^sub>G\<^sub>C) (select C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)"
+        if ?select\<^sub>G_not_empty
+        using ground_resolutionI(6) that
+        unfolding ground_resolutionI(3)
+        by (metis C\<^sub>G_def select_from_C)
+
+      then show ?thesis
+        using
+          that
+          obtain_maximal_literal[OF _ select_ground_subst[OF C_grounding]]
+          unique_maximal_in_ground_clause[OF select_ground_subst[OF C_grounding]]
+        by (metis is_maximal_not_empty clause.magma_subst_empty)
+     qed
+
+    moreover then have "selected_l \<in># C" if ?select\<^sub>G_not_empty
+      using that
+      by (meson maximal_in_clause mset_subset_eqD select_subset)
+
+    ultimately show ?thesis
+      using that
+      sorry
+    qed
+
+  obtain C' where C: "C = add_mset l\<^sub>C C'"
+    by (meson l\<^sub>C_in_C multi_member_split)
+
+  then have C'_\<gamma>: "C' \<cdot> \<rho>\<^sub>1 \<odot> \<gamma> = clause.from_ground C\<^sub>G'"
+    using l\<^sub>C_\<gamma> C_\<gamma>
+    by auto
+
+  obtain t\<^sub>C where 
+    l\<^sub>C: "l\<^sub>C = Neg t\<^sub>C" and
+    t\<^sub>C_\<gamma>: "t\<^sub>C \<cdot>t \<rho>\<^sub>1 \<odot> \<gamma> = term.from_ground t\<^sub>G"
+    using l\<^sub>C_\<gamma> 
+    by (metis Neg_atm_of_iff Resolution.nonground_clause.literal_from_ground_atom_from_ground(1) clause_safe_unfolds(9)
+        ground_resolutionI(3) literal.sel(2) subst_polarity_stable(2))
+
+  obtain l\<^sub>D where
+    l\<^sub>D_\<gamma>: "l\<^sub>D \<cdot>l \<rho>\<^sub>2 \<odot> \<gamma> = literal.from_ground L\<^sub>G\<^sub>D" and
+    l\<^sub>D_is_strictly_maximal: "is_strictly_maximal l\<^sub>D D"
+  proof-
+    have "is_strictly_maximal (literal.from_ground L\<^sub>G\<^sub>D) (D \<cdot> \<rho>\<^sub>2 \<odot> \<gamma>)"
+      using ground_resolutionI(8) D_grounding
+      by simp
+
+    then show ?thesis
+      using obtain_strictly_maximal_literal[OF D_grounding] that
+      by metis
+  qed
+
+  then have l\<^sub>2_in_D: "l\<^sub>D \<in># D"
+    using strictly_maximal_in_clause
+    by blast
+
+  from l\<^sub>D_\<gamma> have l\<^sub>D_\<gamma>: "l\<^sub>D \<cdot>l \<rho>\<^sub>2 \<odot> \<gamma> = (Pos (term.from_ground t\<^sub>G))"
+    unfolding ground_resolutionI
+    by simp
+
+  then obtain t\<^sub>D where
+    l\<^sub>D: "l\<^sub>D = Pos t\<^sub>D" and
+    t\<^sub>D_\<gamma>: "t\<^sub>D \<cdot>t \<rho>\<^sub>2 \<odot> \<gamma> = term.from_ground t\<^sub>G"
+    by (metis clause_safe_unfolds(9) literal.collapse(1) literal.disc(1) literal.sel(1) subst_polarity_stable(2))
+
+  obtain D' where D: "D = add_mset l\<^sub>D D'"
+    by (meson l\<^sub>2_in_D multi_member_split)
+
+  then have D'_\<gamma>: "D' \<cdot> \<rho>\<^sub>2 \<odot> \<gamma> = clause.from_ground D\<^sub>G'"
+    using D_\<gamma> l\<^sub>D_\<gamma>
+    unfolding ground_resolutionI
+    by auto
+
+  obtain \<V>\<^sub>3 where
+    \<V>\<^sub>3: "infinite_variables_per_type \<V>\<^sub>3" and
+    \<V>\<^sub>1_\<V>\<^sub>3: "\<forall>x\<in>clause.vars C. \<V>\<^sub>1 x = \<V>\<^sub>3 (term.rename \<rho>\<^sub>1 x)" and
+    \<V>\<^sub>2_\<V>\<^sub>3: "\<forall>x\<in>clause.vars D. \<V>\<^sub>2 x = \<V>\<^sub>3 (term.rename \<rho>\<^sub>2 x)"
+    using clause.obtain_merged_\<V>[OF \<rho>\<^sub>1 \<rho>\<^sub>2 rename_apart clause.finite_vars clause.finite_vars 
+                                 infinite_UNIV] .
+  have \<gamma>_is_welltyped: "is_welltyped_on (clause.vars (C \<cdot> \<rho>\<^sub>1) \<union> clause.vars (D \<cdot> \<rho>\<^sub>2)) \<V>\<^sub>3 \<gamma>"
+  proof(unfold Set.ball_Un, intro conjI)
+
+    show "is_welltyped_on (clause.vars (C \<cdot> \<rho>\<^sub>1)) \<V>\<^sub>3 \<gamma>"
+      using clause.is_welltyped.renaming_grounding[OF \<rho>\<^sub>1 \<rho>\<^sub>1_\<gamma>_is_welltyped C_grounding \<V>\<^sub>1_\<V>\<^sub>3] .
+  next
+
+    show "is_welltyped_on (clause.vars (D \<cdot> \<rho>\<^sub>2)) \<V>\<^sub>3 \<gamma>"
+      using clause.is_welltyped.renaming_grounding[OF \<rho>\<^sub>2 \<rho>\<^sub>2_\<gamma>_is_welltyped D_grounding \<V>\<^sub>2_\<V>\<^sub>3] .
+  qed
+
+  obtain \<mu> \<sigma> where
+    \<gamma>: "\<gamma> = \<mu> \<odot> \<sigma>" and
+    imgu: "welltyped_imgu_on (clause.vars (C \<cdot> \<rho>\<^sub>1) \<union> clause.vars (D \<cdot> \<rho>\<^sub>2)) \<V>\<^sub>3 (t\<^sub>C \<cdot>t \<rho>\<^sub>1) (t\<^sub>D \<cdot>t \<rho>\<^sub>2) \<mu>"
+  proof-
+
+    have unified: "t\<^sub>C \<cdot>t \<rho>\<^sub>1 \<cdot>t \<gamma> = t\<^sub>D \<cdot>t \<rho>\<^sub>2 \<cdot>t \<gamma>"
+      using t\<^sub>C_\<gamma> t\<^sub>D_\<gamma>
+      by simp
+
+    obtain \<tau> where welltyped: "welltyped \<V>\<^sub>3 (t\<^sub>C \<cdot>t \<rho>\<^sub>1) \<tau>" "welltyped \<V>\<^sub>3 (t\<^sub>D \<cdot>t \<rho>\<^sub>2) \<tau>"
+    proof-
+      have "clause.is_welltyped \<V>\<^sub>2 (D \<cdot> \<rho>\<^sub>2 \<odot> \<gamma>)"
+        using \<rho>\<^sub>2_\<gamma>_is_welltyped D_is_welltyped
+        by (metis clause.is_welltyped.subst_stability)
+
+      then obtain \<tau> where
+        "welltyped \<V>\<^sub>2 (term.from_ground t\<^sub>G) \<tau>"
+        unfolding D_\<gamma> ground_resolutionI
+        apply auto
+        by (meson literal.is_welltyped_def literal.set_intros(1))
+
+      then have "welltyped \<V>\<^sub>3 (term.from_ground t\<^sub>G) \<tau>"
+        using term.welltyped.is_ground_typed
+        by (meson term.ground_is_ground term.welltyped.is_ground_typed)
+
+      then have "welltyped \<V>\<^sub>3 (t\<^sub>C \<cdot>t \<rho>\<^sub>1 \<odot> \<gamma>) \<tau>" "welltyped \<V>\<^sub>3 (t\<^sub>D \<cdot>t \<rho>\<^sub>2 \<odot> \<gamma>) \<tau>"
+        using t\<^sub>C_\<gamma> t\<^sub>D_\<gamma>
+        by presburger+
+
+      moreover have
+        "term.vars (t\<^sub>C \<cdot>t \<rho>\<^sub>1) \<subseteq> clause.vars (C \<cdot> \<rho>\<^sub>1)"
+        "term.vars (t\<^sub>D \<cdot>t \<rho>\<^sub>2) \<subseteq> clause.vars (D \<cdot> \<rho>\<^sub>2)"
+        unfolding C l\<^sub>C clause.add_subst D l\<^sub>D
+        by auto
+
+      ultimately have "welltyped \<V>\<^sub>3 (t\<^sub>C \<cdot>t \<rho>\<^sub>1) \<tau>" "welltyped \<V>\<^sub>3 (t\<^sub>D \<cdot>t \<rho>\<^sub>2) \<tau>"
+        using \<gamma>_is_welltyped
+        by (simp_all add: subsetD)
+
+      then show ?thesis
+        using that
+        by blast
+    qed
+
+    show ?thesis
+      using obtain_welltyped_imgu_on[OF unified welltyped] that
+      by metis
+  qed
+
+  define R' where
+    R': "R' = C' + D'"
+
+  show ?thesis
+  proof(rule that)
+
+    show resolution: "resolution (C, \<V>\<^sub>1) (D, \<V>\<^sub>2) (R', \<V>\<^sub>3)"
+    proof(rule resolutionI;
+          ((rule \<rho>\<^sub>1 \<rho>\<^sub>2 C D l\<^sub>C l\<^sub>D imgu rename_apart \<rho>\<^sub>1_is_welltyped \<rho>\<^sub>2_is_welltyped \<V>\<^sub>1 \<V>\<^sub>2 R'
+               \<V>\<^sub>1_\<V>\<^sub>3 \<V>\<^sub>2_\<V>\<^sub>3)+)?)
+      show "clause.vars (D \<cdot> \<rho>\<^sub>2) \<inter> clause.vars (C \<cdot> \<rho>\<^sub>1) = {}"
+        using rename_apart
+        by blast
+    next
+      show "(\<exists>\<tau>. welltyped \<V>\<^sub>3 (t\<^sub>C \<cdot>t \<rho>\<^sub>1) \<tau> \<and> welltyped \<V>\<^sub>3 (t\<^sub>D \<cdot>t \<rho>\<^sub>2) \<tau>) \<and>
+      is_welltyped_on (clause.vars (D \<cdot> \<rho>\<^sub>2) \<union> clause.vars (C \<cdot> \<rho>\<^sub>1)) \<V>\<^sub>3 \<mu> \<and> term.is_imgu \<mu> {{t\<^sub>C \<cdot>t \<rho>\<^sub>1, t\<^sub>D \<cdot>t \<rho>\<^sub>2}}"
+      sorry
+    next
+      show "\<not> C \<cdot> \<rho>\<^sub>1 \<odot> \<mu> \<preceq>\<^sub>c D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>"
+      proof(rule clause.order.ground_less_not_less_eq)
+
+        show "clause.vars (D \<cdot> \<rho>\<^sub>2 \<odot> \<mu> \<cdot> \<sigma>) = {}"
+          using D_grounding
+          unfolding \<gamma>
+          by simp
+
+        show "clause.vars (C \<cdot> \<rho>\<^sub>1 \<odot> \<mu> \<cdot> \<sigma>) = {}"
+          using C_grounding
+          unfolding \<gamma>
+          by simp
+
+        show "D \<cdot> \<rho>\<^sub>2 \<odot> \<mu> \<cdot> \<sigma> \<prec>\<^sub>c C \<cdot> \<rho>\<^sub>1 \<odot> \<mu> \<cdot> \<sigma>"
+          using ground_resolutionI(5) D_grounding C_grounding
+          unfolding C\<^sub>G_def D\<^sub>G_def clause.order.less\<^sub>G_def \<gamma>
+          by simp
+      qed
+    next
 qed
 end
 end
