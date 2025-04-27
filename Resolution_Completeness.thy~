@@ -253,7 +253,7 @@ lemma resolution_lifting:
     [simp]: "R\<^sub>G \<equiv> clause.to_ground (R \<cdot> \<gamma>)" and
     [simp]: "N\<^sub>G \<equiv> clause.welltyped_ground_instances (C, \<V>\<^sub>1) \<union>
                     clause.welltyped_ground_instances (D, \<V>\<^sub>2)" and
-    [simp]: "\<iota>\<^sub>G \<equiv> Infer [C\<^sub>G, D\<^sub>G] R\<^sub>G"
+    [simp]: "\<iota>\<^sub>G \<equiv> Infer [D\<^sub>G, C\<^sub>G] R\<^sub>G"
   assumes
     ground_resolution: "ground.resolution C\<^sub>G D\<^sub>G R\<^sub>G" and
     \<rho>\<^sub>1: "term_subst.is_renaming \<rho>\<^sub>1" and
@@ -276,8 +276,8 @@ lemma resolution_lifting:
   obtains R' \<V>\<^sub>3
   where
     "resolution (C, \<V>\<^sub>1) (D, \<V>\<^sub>2) (R', \<V>\<^sub>3)"
-    "\<iota>\<^sub>G \<in> inference_ground_instances (Infer [(C, \<V>\<^sub>1), (D, \<V>\<^sub>2)] (R', \<V>\<^sub>3))"
-    "C' \<cdot> \<gamma> = C \<cdot> \<gamma>"
+    "\<iota>\<^sub>G \<in> inference_ground_instances (Infer [(D, \<V>\<^sub>2), (C, \<V>\<^sub>1)] (R', \<V>\<^sub>3))"
+    "R' \<cdot> \<gamma> = R \<cdot> \<gamma>"
   using ground_resolution
 proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
   case ground_resolutionI: (resolutionI L\<^sub>G\<^sub>C C\<^sub>G' L\<^sub>G\<^sub>D D\<^sub>G' t\<^sub>G)
@@ -385,7 +385,7 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
       by metis
   qed
 
-  then have l\<^sub>2_in_D: "l\<^sub>D \<in># D"
+  then have l\<^sub>D_in_D: "l\<^sub>D \<in># D"
     using strictly_maximal_in_clause
     by blast
 
@@ -399,7 +399,7 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
     by (metis clause_safe_unfolds(9) literal.collapse(1) literal.disc(1) literal.sel(1) subst_polarity_stable(2))
 
   obtain D' where D: "D = add_mset l\<^sub>D D'"
-    by (meson l\<^sub>2_in_D multi_member_split)
+    by (meson l\<^sub>D_in_D multi_member_split)
 
   then have D'_\<gamma>: "D' \<cdot> \<rho>\<^sub>2 \<odot> \<gamma> = clause.from_ground D\<^sub>G'"
     using D_\<gamma> l\<^sub>D_\<gamma>
@@ -473,7 +473,7 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
   qed
 
   define R' where
-    R': "R' = C' + D'"
+    R': "R' = (C' \<cdot> \<rho>\<^sub>1 + D' \<cdot> \<rho>\<^sub>2) \<cdot> \<mu>"
 
   show ?thesis
   proof(rule that)
@@ -509,6 +509,116 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
           by simp
       qed
     next
+      show "select C = {#} \<and> is_maximal (l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<mu>) (C \<cdot> \<rho>\<^sub>1 \<odot> \<mu>) \<or> is_maximal (l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<mu>) (select C \<cdot> \<rho>\<^sub>1 \<odot> \<mu>)"
+      proof(cases "select C = {#}")
+        case True
+        then have "?select\<^sub>G_empty"
+          using is_maximal_not_empty l\<^sub>C_selected 
+          by blast
+
+        moreover have "l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<mu> \<in># C \<cdot> \<rho>\<^sub>1 \<odot> \<mu>"
+          using l\<^sub>C_in_C
+          by blast
+
+        ultimately show ?thesis
+          using l\<^sub>C_\<gamma>_is_maximal is_maximal_if_grounding_is_maximal C_grounding True
+          unfolding \<gamma>
+          by force
+      next
+        case False
+        then have "\<not>?select\<^sub>G_empty"
+          using is_maximal_not_empty l\<^sub>C_selected select_from_C 
+          by auto
+
+        moreover have "l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<mu> \<in># select C \<cdot> \<rho>\<^sub>1 \<odot> \<mu>"
+          using l\<^sub>C_selected maximal_in_clause calculation 
+          by blast
+
+        ultimately show ?thesis
+          using select_ground_subst[OF C_grounding]
+            l\<^sub>C_selected is_maximal_if_grounding_is_maximal
+          unfolding \<gamma>
+          by (metis (no_types, lifting) C\<^sub>G_def \<gamma> clause.comp_subst.left.monoid_action_compatibility ground_resolutionI(6) l\<^sub>C_\<gamma>
+              literal.comp_subst.left.monoid_action_compatibility select_from_C)
+      qed
+    next
+      show "select D = {#}"
+        using ground_resolutionI(7) select_from_D 
+        by fastforce
+    next
+      show "is_strictly_maximal (l\<^sub>D \<cdot>l \<rho>\<^sub>2 \<odot> \<mu>) (D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>)"
+      proof(rule is_strictly_maximal_if_grounding_is_strictly_maximal)
+
+        show "l\<^sub>D \<cdot>l \<rho>\<^sub>2 \<odot> \<mu> \<in># D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>"
+          using l\<^sub>D_in_D
+          by blast
+
+        show "clause.is_ground (D \<cdot> \<rho>\<^sub>2 \<odot> \<mu> \<cdot> \<sigma>)"
+          using D_grounding[unfolded \<gamma>]
+          by simp
+
+        show "is_strictly_maximal (l\<^sub>D \<cdot>l \<rho>\<^sub>2 \<odot> \<mu> \<cdot>l \<sigma>) (D \<cdot> \<rho>\<^sub>2 \<odot> \<mu> \<cdot> \<sigma>)"
+          using l\<^sub>D_\<gamma> D_\<gamma> ground_resolutionI(8)
+          unfolding \<gamma> ground_resolutionI
+          by fastforce
+      qed
+    qed
+  
+    show R'_\<gamma>: "R' \<cdot> \<gamma> = R \<cdot> \<gamma>"
+    proof-
+
+      have "term_subst.is_idem \<mu>"
+        using imgu term.is_imgu_iff_is_idem_and_is_mgu
+        by blast
+
+      then have \<mu>_\<gamma>: "\<mu> \<odot> \<gamma> = \<gamma>"
+        unfolding \<gamma> term_subst.is_idem_def
+        by (metis subst_compose_assoc)
+
+      have "R \<cdot> \<gamma> = (clause.from_ground C\<^sub>G' + clause.from_ground D\<^sub>G')"
+        using ground_resolutionI(8, 9) clause.to_ground_inverse[OF R_grounding]
+        by auto
+
+      then show ?thesis
+        unfolding
+          R'
+          C'_\<gamma>[symmetric]
+          D'_\<gamma>[symmetric]
+          clause.subst_comp_subst[symmetric]
+          \<mu>_\<gamma>
+        by simp
+    qed
+
+    show "\<iota>\<^sub>G \<in> inference_ground_instances (Infer [(D, \<V>\<^sub>2), (C, \<V>\<^sub>1)] (R', \<V>\<^sub>3))"
+    proof (rule is_inference_ground_instance_two_premises)
+
+      show "is_inference_ground_instance_two_premises (D, \<V>\<^sub>2) (C, \<V>\<^sub>1) (R', \<V>\<^sub>3) \<iota>\<^sub>G \<gamma> \<rho>\<^sub>1 \<rho>\<^sub>2"
+      proof(unfold split, intro conjI;
+            (rule \<rho>\<^sub>1 \<rho>\<^sub>2 rename_apart D_is_welltyped C_is_welltyped refl \<V>\<^sub>1 \<V>\<^sub>2 \<V>\<^sub>3)?)
+
+        show "inference.is_ground (Infer [D \<cdot> \<rho>\<^sub>2, C \<cdot> \<rho>\<^sub>1] R' \<cdot>\<iota> \<gamma>)"
+          using  D_grounding C_grounding R_grounding R'_\<gamma>
+          by auto
+      next
+
+        show "\<iota>\<^sub>G = inference.to_ground (Infer [D \<cdot> \<rho>\<^sub>2, C \<cdot> \<rho>\<^sub>1] R' \<cdot>\<iota> \<gamma>)"
+          using R'_\<gamma>
+          by simp
+      next
+
+        show "clause.is_welltyped \<V>\<^sub>3 R'"
+          using resolution C_is_welltyped D_is_welltyped
+          sorry
+      next
+        show "is_welltyped_on (clause.vars R') \<V>\<^sub>3 \<gamma>"
+          sorry
+      qed
+        show "\<iota>\<^sub>G \<in> ground.G_Inf"
+        unfolding ground.G_Inf_def
+        using ground_resolution
+        by simp
+    qed
+  qed
 qed
 end
 end
