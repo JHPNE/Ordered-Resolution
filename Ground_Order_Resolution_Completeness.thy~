@@ -458,8 +458,9 @@ proof (induction C arbitrary: D rule: wfp_induct_rule)
       case ex_neg_lit_sel_or_max: True
       then obtain A where
         "Neg A \<in># C" and
-        sel_or_max: "Neg A \<in># select C \<or> select C = {#} \<and> is_maximal (Neg A) C"
-        by metis
+        sel_or_max: "select C = {#} \<and> is_maximal (Neg A) C \<or> is_maximal (Neg A) (select C)"
+        by (metis Neg_atm_of_iff empty_iff is_maximal_def literal.order.ex_maximal_in_mset mset_subset_eqD select_negative_literals
+            select_subset set_mset_empty)
       then obtain C' where
         C_def: "C = add_mset (Neg A) C'"
         by (metis mset_add)
@@ -492,7 +493,7 @@ proof (induction C arbitrary: D rule: wfp_induct_rule)
           show "D \<prec>\<^sub>c C"
             using \<open>D \<prec>\<^sub>c C\<close> .
         next
-          show "select C = {#} \<and> is_maximal (Neg A) C \<or> Neg A \<in># select C"
+          show "select C = {#} \<and> is_maximal (Neg A) C \<or> is_maximal (Neg A) (select C)"
             using sel_or_max 
             by auto
         next

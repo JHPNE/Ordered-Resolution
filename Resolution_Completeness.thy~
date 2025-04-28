@@ -2,7 +2,7 @@ theory Resolution_Completeness
   imports
     Grounded_Resolution
     Ground_Order_Resolution_Completeness
-
+    Resolution_Welltypedness_Preservation
     First_Order_Clause.Nonground_Entailment
 begin
 
@@ -135,9 +135,7 @@ proof(cases D\<^sub>G C\<^sub>G rule: ground.factoring.cases)
   proof(rule that)
 
     show factoring: "factoring (D, \<V>) (?C', \<V>)"
-      sorry
-(*
-    proof (rule factoringI; (rule D l\<^sub>1 l\<^sub>2 imgu refl \<V>)?)
+    proof (rule factoringI; (rule D imgu refl \<V>)?)
       show "select D = {#}"
         using ground_factoringI(3) select
         by simp
@@ -146,32 +144,17 @@ proof(cases D\<^sub>G C\<^sub>G rule: ground.factoring.cases)
         using l\<^sub>1_is_maximal clause.subst_in_to_set_subst maximal_in_clause
         by blast
 
-      then have "is_maximal (l\<^sub>1 \<cdot>l \<mu>) (D \<cdot> \<mu>)"
+      then show "is_maximal (l\<^sub>1 \<cdot>l \<mu>) (D \<cdot> \<mu>)"
         using is_maximal_if_grounding_is_maximal D_grounding l\<^sub>1_\<gamma>_is_maximal
         unfolding \<gamma>
-        by auto
+        by auto       
     next
-      have "(\<exists>\<tau>. welltyped \<V> t\<^sub>1 \<tau>) \<and> is_welltyped_on (clause.vars D) \<V> \<mu> \<and> term.is_imgu \<mu> {{t\<^sub>1, t\<^sub>1}}"
-        sorry
+      show "D = add_mset l\<^sub>1 (add_mset (Pos t\<^sub>2) D')"
+        unfolding D l\<^sub>2 ..
     next
-      show "D = add_mset l\<^sub>1 (add_mset l\<^sub>1 D')"
-      proof-
-        have "D = add_mset l\<^sub>1 (add_mset l\<^sub>2 D')"
-          by (rule D)
-        moreover have "l\<^sub>1 = l\<^sub>2"
-        proof-
-          have "t\<^sub>1 \<cdot>t \<mu> = t\<^sub>2 \<cdot>t \<mu>"
-            using imgu term.subst_imgu_eq_subst_imgu 
-            by blast
-          moreover have "l\<^sub>1 = Pos t\<^sub>1" "l\<^sub>2 = Pos t\<^sub>2"
-            by (rule l\<^sub>1, rule l\<^sub>2)
-          ultimately show ?thesis
-            sorry   
-        qed
-        ultimately show ?thesis
-          sorry
-      qed
-    qed*)
+      show "l\<^sub>1 = Pos t\<^sub>1"
+        using l\<^sub>1 .
+    qed
 
     show C'_\<gamma>: "?C' \<cdot> \<gamma> = C \<cdot> \<gamma>"
     proof-
@@ -488,7 +471,8 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
     next
       show "(\<exists>\<tau>. welltyped \<V>\<^sub>3 (t\<^sub>C \<cdot>t \<rho>\<^sub>1) \<tau> \<and> welltyped \<V>\<^sub>3 (t\<^sub>D \<cdot>t \<rho>\<^sub>2) \<tau>) \<and>
       is_welltyped_on (clause.vars (D \<cdot> \<rho>\<^sub>2) \<union> clause.vars (C \<cdot> \<rho>\<^sub>1)) \<V>\<^sub>3 \<mu> \<and> term.is_imgu \<mu> {{t\<^sub>C \<cdot>t \<rho>\<^sub>1, t\<^sub>D \<cdot>t \<rho>\<^sub>2}}"
-      sorry
+        using imgu
+        by blast
     next
       show "\<not> C \<cdot> \<rho>\<^sub>1 \<odot> \<mu> \<preceq>\<^sub>c D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>"
       proof(rule clause.order.ground_less_not_less_eq)

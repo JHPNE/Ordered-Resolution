@@ -5,12 +5,71 @@ begin
 context resolution_calculus
 begin
 
+lemma factoring_preserves_typing_C:
+  assumes 
+  factoring: "factoring (C, \<V>) (D, \<V>)" and
+  D_is_welltyped: "clause.is_welltyped \<V> D"
+  shows "clause.is_welltyped \<V> C"
+  using factoring
+proof (cases "(C, \<V>)" "(D, \<V>)" rule: factoring.cases)
+  case (factoringI L\<^sub>1 \<mu> t\<^sub>1 t\<^sub>2 L\<^sub>2 C')
+  
+  have "clause.is_welltyped \<V> ((add_mset L\<^sub>1 C') \<cdot> \<mu>)"
+    using D_is_welltyped
+    unfolding factoringI .
+
+  then have "clause.is_welltyped \<V> (add_mset L\<^sub>1 C')"
+    using factoringI(3)
+    unfolding factoringI
+    apply auto
+    by (metis Resolution.nonground_clause.clause_safe_unfolds(10,7) Un_iff literal.is_welltyped.subst_stability)
+
+  moreover have "literal.is_welltyped \<V> L\<^sub>2"
+    using factoringI(3) literal.is_welltyped_def
+    unfolding factoringI
+    by fastforce
+
+  ultimately show ?thesis
+    unfolding factoringI
+    by simp
+qed
+
+lemma factoring_preserves_typing_D:
+  assumes 
+  factoring: "factoring (C, \<V>) (D, \<V>)" and
+  C_is_welltyped: "clause.is_welltyped \<V> C"
+  shows "clause.is_welltyped \<V> D"
+  using factoring
+proof (cases "(C, \<V>)" "(D, \<V>)" rule: factoring.cases)
+  case (factoringI L\<^sub>1 \<mu> t\<^sub>1 t\<^sub>2 L\<^sub>2 C')
+
+  have "clause.is_welltyped \<V> C'" "literal.is_welltyped \<V> L\<^sub>1"
+    using C_is_welltyped
+    unfolding factoringI
+    by simp_all
+
+  then have "clause.is_welltyped \<V> (C' \<cdot> \<mu>)" "literal.is_welltyped \<V> (L\<^sub>1 \<cdot>l \<mu>)"
+    using factoringI(3)
+    unfolding factoringI
+    apply fastforce
+    by (metis Un_iff \<open>literal.is_welltyped \<V> L\<^sub>1\<close> clause.vars_add literal.is_welltyped.subst_stability
+        local.factoringI(3,4,5))
+
+  then show ?thesis
+    unfolding factoringI
+    by simp
+qed
+
 lemma factoring_preserves_typing:
   assumes 
   factoring: "factoring (C, \<V>) (D, \<V>)"
   shows "clause.is_welltyped \<V> C \<longleftrightarrow> clause.is_welltyped \<V> D"
-  using assms
-by (cases "(C, \<V>)" "(D, \<V>)" rule: factoring.cases) force
+  using 
+    factoring_preserves_typing_C
+    factoring_preserves_typing_D
+    assms
+  by fast
+
 
 lemma resolution_preserves_typing_R:
   assumes
@@ -141,8 +200,8 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
      using resolutionI(6)
      by meson
 
-show ?thesis
-  proof-
+   show ?thesis
+   proof-
     have "clause.is_welltyped \<V>\<^sub>1 C'"
     proof-
       have "clause.is_welltyped \<V>\<^sub>3 (C' \<cdot> \<rho>\<^sub>1)"

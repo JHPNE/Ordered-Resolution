@@ -115,8 +115,7 @@ proof(cases D\<^sub>G C\<^sub>G rule: ground.factoring.cases)
     then obtain \<tau> where "welltyped \<V> (t\<^sub>1 \<cdot>t \<gamma>) \<tau>" "welltyped \<V> (t\<^sub>2 \<cdot>t \<gamma>) \<tau>"
       using D_is_welltyped \<gamma>_is_welltyped
       unfolding D l\<^sub>1 l\<^sub>2
-      apply auto
-      by (meson literal.is_welltyped_def literal.set_intros(1))
+      by auto
 
     then have welltyped: "welltyped \<V> t\<^sub>1 \<tau>" "welltyped \<V> t\<^sub>2 \<tau>"
       using \<gamma>_is_welltyped
@@ -135,9 +134,7 @@ proof(cases D\<^sub>G C\<^sub>G rule: ground.factoring.cases)
   proof(rule that)
 
     show factoring: "factoring (D, \<V>) (?C', \<V>)"
-      sorry
-(*
-    proof (rule factoringI; (rule D l\<^sub>1 l\<^sub>2 imgu refl \<V>)?)
+    proof (rule factoringI; (rule D imgu refl \<V>)?)
       show "select D = {#}"
         using ground_factoringI(3) select
         by simp
@@ -146,32 +143,17 @@ proof(cases D\<^sub>G C\<^sub>G rule: ground.factoring.cases)
         using l\<^sub>1_is_maximal clause.subst_in_to_set_subst maximal_in_clause
         by blast
 
-      then have "is_maximal (l\<^sub>1 \<cdot>l \<mu>) (D \<cdot> \<mu>)"
+      then show "is_maximal (l\<^sub>1 \<cdot>l \<mu>) (D \<cdot> \<mu>)"
         using is_maximal_if_grounding_is_maximal D_grounding l\<^sub>1_\<gamma>_is_maximal
         unfolding \<gamma>
-        by auto
+        by auto       
     next
-      have "(\<exists>\<tau>. welltyped \<V> t\<^sub>1 \<tau>) \<and> is_welltyped_on (clause.vars D) \<V> \<mu> \<and> term.is_imgu \<mu> {{t\<^sub>1, t\<^sub>1}}"
-        sorry
+      show "D = add_mset l\<^sub>1 (add_mset (Pos t\<^sub>2) D')"
+        unfolding D l\<^sub>2 ..
     next
-      show "D = add_mset l\<^sub>1 (add_mset l\<^sub>1 D')"
-      proof-
-        have "D = add_mset l\<^sub>1 (add_mset l\<^sub>2 D')"
-          by (rule D)
-        moreover have "l\<^sub>1 = l\<^sub>2"
-        proof-
-          have "t\<^sub>1 \<cdot>t \<mu> = t\<^sub>2 \<cdot>t \<mu>"
-            using imgu term.subst_imgu_eq_subst_imgu 
-            by blast
-          moreover have "l\<^sub>1 = Pos t\<^sub>1" "l\<^sub>2 = Pos t\<^sub>2"
-            by (rule l\<^sub>1, rule l\<^sub>2)
-          ultimately show ?thesis
-            sorry   
-        qed
-        ultimately show ?thesis
-          sorry
-      qed
-    qed*)
+      show "l\<^sub>1 = Pos t\<^sub>1"
+        using l\<^sub>1 .
+    qed
 
     show C'_\<gamma>: "?C' \<cdot> \<gamma> = C \<cdot> \<gamma>"
     proof-
@@ -369,7 +351,7 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
     l\<^sub>C: "l\<^sub>C = Neg t\<^sub>C" and
     t\<^sub>C_\<gamma>: "t\<^sub>C \<cdot>t \<rho>\<^sub>1 \<odot> \<gamma> = term.from_ground t\<^sub>G"
     using l\<^sub>C_\<gamma> 
-    by (metis Neg_atm_of_iff Resolution.nonground_clause.literal_from_ground_atom_from_ground(1) clause_safe_unfolds(9)
+    by (metis Neg_atm_of_iff literal_from_ground_atom_from_ground(1) clause_safe_unfolds(9)
         ground_resolutionI(3) literal.sel(2) subst_polarity_stable(2))
 
   obtain l\<^sub>D where
@@ -382,7 +364,7 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
 
     then show ?thesis
       using obtain_strictly_maximal_literal[OF D_grounding] that
-      by metis
+      by force
   qed
 
   then have l\<^sub>D_in_D: "l\<^sub>D \<in># D"
@@ -416,11 +398,11 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
   proof(unfold Set.ball_Un, intro conjI)
 
     show "is_welltyped_on (clause.vars (C \<cdot> \<rho>\<^sub>1)) \<V>\<^sub>3 \<gamma>"
-      using clause.is_welltyped.renaming_grounding[OF \<rho>\<^sub>1 \<rho>\<^sub>1_\<gamma>_is_welltyped C_grounding \<V>\<^sub>1_\<V>\<^sub>3] .
+      using clause.renaming_grounding[OF \<rho>\<^sub>1 \<rho>\<^sub>1_\<gamma>_is_welltyped C_grounding \<V>\<^sub>1_\<V>\<^sub>3] .
   next
 
     show "is_welltyped_on (clause.vars (D \<cdot> \<rho>\<^sub>2)) \<V>\<^sub>3 \<gamma>"
-      using clause.is_welltyped.renaming_grounding[OF \<rho>\<^sub>2 \<rho>\<^sub>2_\<gamma>_is_welltyped D_grounding \<V>\<^sub>2_\<V>\<^sub>3] .
+      using clause.renaming_grounding[OF \<rho>\<^sub>2 \<rho>\<^sub>2_\<gamma>_is_welltyped D_grounding \<V>\<^sub>2_\<V>\<^sub>3] .
   qed
 
   obtain \<mu> \<sigma> where
@@ -436,17 +418,16 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
     proof-
       have "clause.is_welltyped \<V>\<^sub>2 (D \<cdot> \<rho>\<^sub>2 \<odot> \<gamma>)"
         using \<rho>\<^sub>2_\<gamma>_is_welltyped D_is_welltyped
-        by (metis clause.is_welltyped.subst_stability)
+        by (metis clause.welltyped_subst_stability)
 
       then obtain \<tau> where
         "welltyped \<V>\<^sub>2 (term.from_ground t\<^sub>G) \<tau>"
         unfolding D_\<gamma> ground_resolutionI
-        apply auto
-        by (meson literal.is_welltyped_def literal.set_intros(1))
+        by auto
 
       then have "welltyped \<V>\<^sub>3 (term.from_ground t\<^sub>G) \<tau>"
-        using term.welltyped.is_ground_typed
-        by (meson term.ground_is_ground term.welltyped.is_ground_typed)
+        using term.is_ground_typed
+        by (meson term.ground_is_ground term.is_ground_typed)
 
       then have "welltyped \<V>\<^sub>3 (t\<^sub>C \<cdot>t \<rho>\<^sub>1 \<odot> \<gamma>) \<tau>" "welltyped \<V>\<^sub>3 (t\<^sub>D \<cdot>t \<rho>\<^sub>2 \<odot> \<gamma>) \<tau>"
         using t\<^sub>C_\<gamma> t\<^sub>D_\<gamma>
@@ -488,7 +469,8 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
     next
       show "(\<exists>\<tau>. welltyped \<V>\<^sub>3 (t\<^sub>C \<cdot>t \<rho>\<^sub>1) \<tau> \<and> welltyped \<V>\<^sub>3 (t\<^sub>D \<cdot>t \<rho>\<^sub>2) \<tau>) \<and>
       is_welltyped_on (clause.vars (D \<cdot> \<rho>\<^sub>2) \<union> clause.vars (C \<cdot> \<rho>\<^sub>1)) \<V>\<^sub>3 \<mu> \<and> term.is_imgu \<mu> {{t\<^sub>C \<cdot>t \<rho>\<^sub>1, t\<^sub>D \<cdot>t \<rho>\<^sub>2}}"
-      sorry
+        using imgu
+        by blast
     next
       show "\<not> C \<cdot> \<rho>\<^sub>1 \<odot> \<mu> \<preceq>\<^sub>c D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>"
       proof(rule clause.order.ground_less_not_less_eq)

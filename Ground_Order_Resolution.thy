@@ -8,16 +8,17 @@ theory Ground_Order_Resolution
     "Abstract-Rewriting.Abstract_Rewriting"
 
     First_Order_Clause.Multiset_Extra
-    First_Order_Clause.Clausal_Calculus_Extra
     First_Order_Clause.Selection_Function
     First_Order_Clause.HOL_Extra
-    Ground_Order_Base
+    First_Order_Clause.Ground_Order
+    First_Order_Clause.Ground_Term_Extra
+    First_Order_Clause.Literal_Functor
 begin
 
 section \<open>Resolution Calculus\<close>
 
 locale ground_order_resolution_calculus =
-  ground_order_base where less\<^sub>t = less\<^sub>t +
+  ground_order where less\<^sub>t = less\<^sub>t +
   selection_function select 
 for
   less\<^sub>t :: "'f gterm \<Rightarrow> 'f gterm \<Rightarrow> bool" and
@@ -99,10 +100,14 @@ lemma ground_factoring_smaller_conclusion:
   shows "D \<prec>\<^sub>c C"
   using step
 proof (cases C D rule: factoring.cases)
-  case (factoringI L\<^sub>1 C')
+  case (factoringI L\<^sub>1 C' t)
+  have "D = add_mset L\<^sub>1 C'"
+    using factoringI
+    by argo
+
   then show ?thesis
-    by (metis add.right_neutral add_mset_add_single add_mset_not_empty empty_iff
-        less\<^sub>c_def one_step_implies_multp set_mset_empty)  
+    by (metis (lifting) add.comm_neutral add_mset_add_single add_mset_not_empty clause.order.multiset_extension_def empty_iff local.factoringI(1)
+        one_step_implies_multp set_mset_empty)
 qed
 
 
