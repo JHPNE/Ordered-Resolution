@@ -58,7 +58,7 @@ if
   "clause.vars (D \<cdot> \<rho>\<^sub>2) \<inter> clause.vars (C \<cdot> \<rho>\<^sub>1) = {}"
   "welltyped_imgu_on (clause.vars (D \<cdot> \<rho>\<^sub>2) \<union> clause.vars (C \<cdot> \<rho>\<^sub>1)) \<V>\<^sub>3 (t\<^sub>1 \<cdot>t \<rho>\<^sub>1) (t\<^sub>2 \<cdot>t \<rho>\<^sub>2) \<mu>"
   "\<not> (C \<cdot> \<rho>\<^sub>1 \<odot> \<mu> \<preceq>\<^sub>c D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>)"
-  "select C = {#} \<and> is_maximal (L\<^sub>1 \<cdot>l \<rho>\<^sub>1 \<odot> \<mu>) (C \<cdot> \<rho>\<^sub>1 \<odot> \<mu>) \<or> is_maximal ( L\<^sub>1 \<cdot>l \<rho>\<^sub>1 \<odot> \<mu>) (select C \<cdot> \<rho>\<^sub>1 \<odot> \<mu>)"
+  "select C = {#} \<and> is_maximal (L\<^sub>1 \<cdot>l \<rho>\<^sub>1 \<odot> \<mu>) (C \<cdot> \<rho>\<^sub>1 \<odot> \<mu>) \<or> is_maximal ( L\<^sub>1 \<cdot>l \<rho>\<^sub>1 \<odot> \<mu>) ((select C) \<cdot> \<rho>\<^sub>1 \<odot> \<mu>)"
   "select D = {#}"
   "is_strictly_maximal (L\<^sub>2 \<cdot>l \<rho>\<^sub>2 \<odot> \<mu>) (D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>)"
   "\<forall>x \<in> clause.vars D. \<V>\<^sub>2 x = \<V>\<^sub>3 (term.rename \<rho>\<^sub>2 x)"

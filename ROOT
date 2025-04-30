@@ -10,3 +10,4 @@ theories (* These theories contain the main results. *)
     Ground_Order_Resolution_Soundness
     Ground_Order_Resolution
     Resolution_Completeness
+    Resolution_Welltypedness_Preservation

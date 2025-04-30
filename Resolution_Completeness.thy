@@ -281,7 +281,7 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
     l\<^sub>C_is_maximal: "?select\<^sub>G_empty \<Longrightarrow> is_maximal l\<^sub>C C" and
     l\<^sub>C_\<gamma>_is_maximal: "?select\<^sub>G_empty \<Longrightarrow> is_maximal (l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma>) (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)" and
     l\<^sub>C_selected: "?select\<^sub>G_not_empty \<Longrightarrow> is_maximal l\<^sub>C (select C)" and
-    l\<^sub>C_\<gamma>_selected: "?select\<^sub>G_not_empty \<Longrightarrow>is_maximal (l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma>) (select (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>))" and   
+    l\<^sub>C_\<gamma>_selected: "?select\<^sub>G_not_empty \<Longrightarrow>is_maximal (l\<^sub>C \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma>) ((select C) \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)" and   
     l\<^sub>C_in_C: "l\<^sub>C \<in># C"
   proof-
     have C_not_empty: "C \<noteq> {#}"
@@ -311,13 +311,13 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
         by simp
     qed
 
-    moreover obtain selected_l where
+    then obtain selected_l where
       "is_maximal selected_l (select C)"
-      "is_maximal (selected_l \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma>) (select C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)"
+      "is_maximal (selected_l \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma>) ((select C) \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)"
       "selected_l \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma> = literal.from_ground L\<^sub>G\<^sub>C"
     if ?select\<^sub>G_not_empty
     proof-
-      have "is_maximal (literal.from_ground L\<^sub>G\<^sub>C) (select C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)"
+      have "is_maximal (literal.from_ground L\<^sub>G\<^sub>C) ((select C) \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)"
         if ?select\<^sub>G_not_empty
         using ground_resolutionI(6) that
         unfolding ground_resolutionI(3)
@@ -328,16 +328,17 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
           that
           obtain_maximal_literal[OF _ select_ground_subst[OF C_grounding]]
           unique_maximal_in_ground_clause[OF select_ground_subst[OF C_grounding]]
-        by (metis is_maximal_not_empty clause.magma_subst_empty)
+        by (metis (no_types, lifting) clause.magma_subst_empty(1) is_maximal_not_empty)
      qed
 
     moreover then have "selected_l \<in># C" if ?select\<^sub>G_not_empty
-      using that
-      by (meson maximal_in_clause mset_subset_eqD select_subset)
+      using that maximal_in_clause mset_subset_eqD select_subset
+      by meson
 
     ultimately show ?thesis
-      using that
-      sorry
+      using that ground_resolutionI
+      using \<open>select\<^sub>G (clause.to_ground (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)) = {#} \<Longrightarrow> max_l \<cdot>l \<rho>\<^sub>1 \<odot> \<gamma> = literal.from_ground L\<^sub>G\<^sub>C\<close> 
+      by blast
     qed
 
   obtain C' where C: "C = add_mset l\<^sub>C C'"
@@ -587,13 +588,47 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
           using R'_\<gamma>
           by simp
       next
-
         show "clause.is_welltyped \<V>\<^sub>3 R'"
-          using resolution C_is_welltyped D_is_welltyped
-          sorry
+          using resolution C_is_welltyped D_is_welltyped resolution_preserves_typing 
+          by fastforce
       next
         show "is_welltyped_on (clause.vars R') \<V>\<^sub>3 \<gamma>"
-          sorry
+        proof(rule is_welltyped_on_subset[OF \<gamma>_is_welltyped])
+
+          show "clause.vars R' \<subseteq> clause.vars (C \<cdot> \<rho>\<^sub>1) \<union> clause.vars (D \<cdot> \<rho>\<^sub>2)"
+          proof (unfold subset_eq, intro ballI)
+            fix x
+
+            have is_imgu: "term.is_imgu \<mu> {{t\<^sub>C \<cdot>t \<rho>\<^sub>1, t\<^sub>D \<cdot>t \<rho>\<^sub>2}}"
+              using imgu
+              by blast
+
+            assume "x \<in> clause.vars R'"
+
+            then consider
+              (C') "x \<in> clause.vars (C' \<cdot> \<rho>\<^sub>1 \<odot> \<mu>)" |
+              (D') "x \<in> clause.vars (D' \<cdot> \<rho>\<^sub>2 \<odot> \<mu>)"
+              unfolding R'
+              by auto
+
+            then show "x \<in> clause.vars (C \<cdot> \<rho>\<^sub>1) \<union> clause.vars (D \<cdot> \<rho>\<^sub>2)"
+            proof cases
+              case C'
+
+              then show ?thesis
+                using clause.variables_in_base_imgu[OF is_imgu]
+                unfolding C l\<^sub>C D l\<^sub>D
+                by auto
+            next
+              case D'
+
+              then show ?thesis
+                using clause.variables_in_base_imgu[OF is_imgu]
+                unfolding C l\<^sub>C D l\<^sub>D
+                by auto
+            qed
+          qed
+        qed
       qed
         show "\<iota>\<^sub>G \<in> ground.G_Inf"
         unfolding ground.G_Inf_def
@@ -601,6 +636,59 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
         by simp
     qed
   qed
+qed
+
+context resolution_calculus
+begin
+
+lemma overapproximation:
+  obtains select\<^sub>G where
+    "ground_Inf_overapproximated select\<^sub>G premises"
+    "is_grounding select\<^sub>G"
+proof-
+  obtain select\<^sub>G where
+    subst_stability: "select_subst_stability_on select select\<^sub>G premises" and
+    "is_grounding select\<^sub>G"
+    using obtain_subst_stable_on_select_grounding
+    by blast
+
+  then interpret grounded_superposition_calculus
+    where select\<^sub>G = select\<^sub>G
+    by unfold_locales
+
+  show thesis
+  proof(rule that[OF _ select\<^sub>G])
+
+    show "ground_Inf_overapproximated select\<^sub>G premises"
+      using ground_instances[OF subst_stability]
+      by auto
+  qed
+qed
+
+sublocale statically_complete_calculus "\<bottom>\<^sub>F" inferences entails_\<G> Red_I_\<G> Red_F_\<G>
+proof (unfold static_empty_ord_inter_equiv_static_inter,
+    rule stat_ref_comp_to_non_ground_fam_inter,
+    rule ballI)
+  fix select\<^sub>G
+  assume "select\<^sub>G \<in> select\<^sub>G\<^sub>s"
+
+  then interpret grounded_superposition_calculus
+    where select\<^sub>G = select\<^sub>G
+    by unfold_locales (simp add: select\<^sub>G\<^sub>s_def)
+
+  show "statically_complete_calculus
+          ground.G_Bot
+          ground.G_Inf
+          ground.G_entails
+          ground.Red_I
+          ground.Red_F"
+    by unfold_locales
+next
+
+  show "\<And>N. \<exists>select\<^sub>G \<in> select\<^sub>G\<^sub>s. ground_Inf_overapproximated select\<^sub>G N"
+    using overapproximation
+    unfolding select\<^sub>G\<^sub>s_def
+    by (smt (verit, best) mem_Collect_eq)
 qed
 end
 end

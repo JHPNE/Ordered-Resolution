@@ -12,13 +12,18 @@ begin
 locale resolution_calculus =
   nonground_inhabited_typing \<F> +
   nonground_order less\<^sub>t +
-  nonground_selection_function select +
+  nonground_selection_function where select = select and
+  atom_subst = "(\<cdot>t)" and
+  atom_vars = "term.vars" and
+  atom_from_ground = "term.from_ground" and
+  atom_to_ground = "term.to_ground"
+ +
   tiebreakers: tiebreakers tiebreakers
 for
-  select :: "('f, 'v :: infinite) select" and
+  select :: "('f, 'v :: infinite) term select" and
   less\<^sub>t :: "('f, 'v) term \<Rightarrow> ('f, 'v) term \<Rightarrow> bool" and
   \<F> :: "('f, 'ty) fun_types" and
-  tiebreakers :: "('f, 'v) tiebreakers"
+  tiebreakers :: "('f gterm, ('f, 'v) term) tiebreakers"
 begin
 
 inductive factoring ::

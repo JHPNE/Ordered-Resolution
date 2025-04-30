@@ -21,8 +21,7 @@ proof (cases "(C, \<V>)" "(D, \<V>)" rule: factoring.cases)
   then have "clause.is_welltyped \<V> (add_mset L\<^sub>1 C')"
     using factoringI(3)
     unfolding factoringI
-    apply auto
-    by (metis Resolution.nonground_clause.clause_safe_unfolds(10,7) Un_iff literal.is_welltyped.subst_stability)
+    by simp
 
   moreover have "literal.is_welltyped \<V> L\<^sub>2"
     using factoringI(3) literal.is_welltyped_def
@@ -52,7 +51,7 @@ proof (cases "(C, \<V>)" "(D, \<V>)" rule: factoring.cases)
     using factoringI(3)
     unfolding factoringI
     apply fastforce
-    by (metis Un_iff \<open>literal.is_welltyped \<V> L\<^sub>1\<close> clause.vars_add literal.is_welltyped.subst_stability
+    by (metis Un_iff \<open>literal.is_welltyped \<V> L\<^sub>1\<close> clause.vars_add literal.welltyped_subst_stability
         local.factoringI(3,4,5))
 
   then show ?thesis
@@ -86,7 +85,7 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
     by meson
 
   have "clause.is_welltyped \<V>\<^sub>3 (C \<cdot> \<rho>\<^sub>1)"
-    using C_is_welltyped clause.is_welltyped.typed_renaming[OF resolutionI(3, 12)]
+    using C_is_welltyped clause.welltyped_renaming[OF resolutionI(3, 12)]
     by blast
 
   then have C\<mu>_is_welltyped: "clause.is_welltyped \<V>\<^sub>3 (C \<cdot> \<rho>\<^sub>1 \<odot> \<mu>)"
@@ -94,7 +93,7 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
     by simp
 
   have "clause.is_welltyped \<V>\<^sub>3 (D \<cdot> \<rho>\<^sub>2)"
-    using D_is_welltyped clause.is_welltyped.typed_renaming[OF resolutionI(4, 11)]
+    using D_is_welltyped clause.welltyped_renaming[OF resolutionI(4, 11)]
     by blast
 
   then have D\<mu>_is_welltyped: "clause.is_welltyped \<V>\<^sub>3 (D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>)"
@@ -140,7 +139,7 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
           by simp
   
         ultimately show ?thesis
-          using clause.is_welltyped.typed_renaming[OF resolutionI(4)]
+          using clause.welltyped_renaming[OF resolutionI(4)]
           unfolding resolutionI
           by blast
       qed
@@ -163,18 +162,18 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
             using
               \<tau>
               resolutionI(11)
-              term.welltyped.typed_renaming[OF resolutionI(4)]
+              term.welltyped_renaming[OF resolutionI(4)]
             unfolding resolutionI
             by(auto simp: Set.ball_Un)
 
 
         then show ?thesis
-          using literal.is_welltyped.typed_renaming[OF resolutionI(4) \<V>\<^sub>2_\<V>\<^sub>3] literal.is_welltyped_def
+          using literal.welltyped_renaming[OF resolutionI(4) \<V>\<^sub>2_\<V>\<^sub>3] literal.is_welltyped_def
           unfolding resolutionI by force
       qed
 
      then show ?thesis
-        using literal.is_welltyped.typed_renaming[OF resolutionI(4) \<V>\<^sub>2_\<V>\<^sub>3]
+        using literal.welltyped_renaming[OF resolutionI(4) \<V>\<^sub>2_\<V>\<^sub>3]
         unfolding resolutionI
         by simp
     qed
@@ -215,7 +214,7 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
         by simp
 
       ultimately show ?thesis
-        using clause.is_welltyped.typed_renaming[OF resolutionI(3)]
+        using clause.welltyped_renaming[OF resolutionI(3)]
         unfolding resolutionI
         by blast
     qed
@@ -232,7 +231,7 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
         by (metis literal.is_welltyped_def literal.simps(15) local.resolutionI(6) singleton_iff)
 
       then show ?thesis
-        using literal.is_welltyped.typed_renaming[OF resolutionI(3) \<V>\<^sub>1_\<V>\<^sub>3]
+        using literal.welltyped_renaming[OF resolutionI(3) \<V>\<^sub>1_\<V>\<^sub>3]
         unfolding resolutionI
         by (simp add: literal.is_welltyped_def)
     qed
