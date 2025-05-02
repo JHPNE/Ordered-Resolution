@@ -3,6 +3,7 @@ theory Resolution_Completeness
     Grounded_Resolution
     Ground_Order_Resolution_Completeness
     Resolution_Welltypedness_Preservation
+
     First_Order_Clause.Nonground_Entailment
 begin
 
@@ -638,6 +639,308 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
   qed
 qed
 
+subsection \<open>Ground instances\<close>
+
+context
+  fixes \<iota>\<^sub>G N
+  assumes
+    subst_stability: "subst_stability_on N" and
+    \<iota>\<^sub>G_Inf_from: "\<iota>\<^sub>G \<in> ground.Inf_from_q select\<^sub>G (\<Union>(clause.welltyped_ground_instances ` N))"
+begin
+
+lemma single_premise_ground_instance:
+  assumes
+    ground_inference: "\<iota>\<^sub>G \<in>  {Infer [D] C | D C. ground_inference D C}" and
+    lifting: "\<And>D \<gamma> C \<V> thesis. \<lbrakk>
+    ground_inference (clause.to_ground (D \<cdot> \<gamma>)) (clause.to_ground (C \<cdot> \<gamma>));
+    clause.is_ground (D \<cdot> \<gamma>);
+    clause.is_ground (C \<cdot> \<gamma>);
+    clause.from_ground (select\<^sub>G (clause.to_ground (D \<cdot> \<gamma>))) = select D \<cdot> \<gamma>;
+    clause.is_welltyped \<V> D; 
+    is_welltyped_on (clause.vars D) \<V> \<gamma>;
+    infinite_variables_per_type \<V>;
+    \<And>C'. \<lbrakk>
+        inference (D, \<V>) (C', \<V>);
+        Infer [clause.to_ground (D \<cdot> \<gamma>)] (clause.to_ground (C \<cdot> \<gamma>))
+        \<in> inference_ground_instances (Infer [(D, \<V>)] (C', \<V>));
+        C' \<cdot> \<gamma> = C \<cdot> \<gamma>\<rbrakk> \<Longrightarrow> thesis\<rbrakk>
+       \<Longrightarrow> thesis" and
+    inference_eq: "inference = factoring"
+  obtains \<iota> where
+    "\<iota> \<in> Inf_from N"
+    "\<iota>\<^sub>G \<in> inference_ground_instances \<iota>"
+proof-
+  obtain D\<^sub>G C\<^sub>G where
+    \<iota>\<^sub>G: "\<iota>\<^sub>G = Infer [D\<^sub>G] C\<^sub>G" and
+    ground_inference: "ground_inference D\<^sub>G C\<^sub>G"
+    using ground_inference
+    by blast
+
+  have D\<^sub>G_in_groundings: "D\<^sub>G \<in> \<Union>(clause.welltyped_ground_instances ` N)"
+    using \<iota>\<^sub>G_Inf_from
+    unfolding \<iota>\<^sub>G ground.Inf_from_q_def ground.Inf_from_def
+    by simp
+
+  obtain D \<gamma> \<V> where
+    D_grounding: "clause.is_ground (D \<cdot> \<gamma>)" and
+    D_is_welltyped: "clause.is_welltyped \<V> D" and
+    \<gamma>_is_welltyped: "is_welltyped_on (clause.vars D) \<V> \<gamma>" and
+    \<V>: "infinite_variables_per_type \<V>" and
+    D_in_N: "(D, \<V>)\<in>N" and
+    "select\<^sub>G D\<^sub>G = clause.to_ground (select D \<cdot> \<gamma>)"
+    "D \<cdot> \<gamma> = clause.from_ground D\<^sub>G"
+    using subst_stability[rule_format, OF D\<^sub>G_in_groundings]
+    by blast
+
+  then have
+    D\<^sub>G: "D\<^sub>G = clause.to_ground (D \<cdot> \<gamma>)" and
+    select: "clause.from_ground (select\<^sub>G D\<^sub>G) = select D \<cdot> \<gamma>"
+    by (simp_all add: select_ground_subst)
+
+  obtain C where
+    C\<^sub>G: "C\<^sub>G = clause.to_ground (C \<cdot> \<gamma>)" and
+    C_grounding: "clause.is_ground (C \<cdot> \<gamma>)"
+    by (metis clause.all_subst_ident_iff_ground clause.from_ground_inverse
+        clause.ground_is_ground)
+
+  obtain C' where
+    inference: "inference (D, \<V>) (C', \<V>)" and
+    inference_ground_instances: "\<iota>\<^sub>G \<in> inference_ground_instances (Infer [(D, \<V>)] (C', \<V>))" and
+    C'_C: "C' \<cdot> \<gamma> = C \<cdot> \<gamma>"
+    using
+      lifting[OF
+        ground_inference[unfolded D\<^sub>G C\<^sub>G]
+        D_grounding
+        C_grounding
+        select[unfolded D\<^sub>G]
+        D_is_welltyped
+        \<gamma>_is_welltyped
+        \<V>]
+    unfolding D\<^sub>G C\<^sub>G \<iota>\<^sub>G.
+
+  let ?\<iota> = "Infer [(D, \<V>)] (C', \<V>)"
+
+  show ?thesis
+  proof(rule that[OF _ inference_ground_instances])
+
+    show "?\<iota> \<in> Inf_from N"
+      using D_in_N inference inference_eq
+      unfolding Inf_from_def inferences_def inference_system.Inf_from_def
+      by auto
+  qed
+qed
+
+lemma factoring_ground_instance:
+  assumes ground_factoring: "\<iota>\<^sub>G \<in> ground.factoring_inferences"
+  obtains \<iota> where
+    "\<iota> \<in> Inf_from N"
+    "\<iota>\<^sub>G \<in> inference_ground_instances \<iota>"
+  using factoring_lifting single_premise_ground_instance[OF ground_factoring]
+  by blast
+
+lemma resolution_ground_instance:
+  assumes
+    ground_resolution: "\<iota>\<^sub>G \<in> ground.resolution_inferences" and
+    not_redundant: "\<iota>\<^sub>G \<notin> ground.GRed_I (\<Union> (clause.welltyped_ground_instances ` N))"
+  obtains \<iota> where
+    "\<iota> \<in> Inf_from N"
+    "\<iota>\<^sub>G \<in> inference_ground_instances \<iota>"
+proof-
+obtain C\<^sub>G D\<^sub>G R\<^sub>G where
+    \<iota>\<^sub>G : "\<iota>\<^sub>G = Infer [C\<^sub>G, D\<^sub>G] R\<^sub>G" and
+    ground_resolution: "ground.resolution C\<^sub>G D\<^sub>G R\<^sub>G"
+    using assms(1)
+    by blast
+
+  have
+    C\<^sub>G_in_groundings: "C\<^sub>G \<in> \<Union> (clause.welltyped_ground_instances ` N)" and
+    D\<^sub>G_in_groundings: "D\<^sub>G \<in> \<Union> (clause.welltyped_ground_instances ` N)"
+    using \<iota>\<^sub>G_Inf_from
+    unfolding \<iota>\<^sub>G ground.Inf_from_q_def ground.Inf_from_def
+    by simp_all
+
+  obtain C \<V>\<^sub>1 \<gamma>\<^sub>1 where
+    C_grounding: "clause.is_ground (C \<cdot> \<gamma>\<^sub>1)" and
+    C_is_welltyped: "clause.is_welltyped \<V>\<^sub>1 C" and
+    \<gamma>\<^sub>1_is_welltyped: "is_welltyped_on (clause.vars C) \<V>\<^sub>1 \<gamma>\<^sub>1" and
+    \<V>\<^sub>1: "infinite_variables_per_type \<V>\<^sub>1" and
+    C_in_N: "(C, \<V>\<^sub>1)\<in>N" and
+    "select\<^sub>G C\<^sub>G = clause.to_ground (select C \<cdot> \<gamma>\<^sub>1)"
+    "C \<cdot> \<gamma>\<^sub>1 = clause.from_ground C\<^sub>G"
+    using subst_stability[rule_format, OF C\<^sub>G_in_groundings]
+    by blast
+
+  then have
+    C\<^sub>G: "C\<^sub>G = clause.to_ground (C \<cdot> \<gamma>\<^sub>1)" and
+    select_from_C: "clause.from_ground (select\<^sub>G C\<^sub>G) = select C \<cdot> \<gamma>\<^sub>1"
+    by (simp_all add: select_ground_subst)
+
+  obtain D \<V>\<^sub>2 \<gamma>\<^sub>2 where
+    D_grounding: "clause.is_ground (D \<cdot> \<gamma>\<^sub>2)" and
+    D_is_welltyped: "clause.is_welltyped \<V>\<^sub>2 D" and
+    \<gamma>\<^sub>2_is_welltyped: "is_welltyped_on (clause.vars D) \<V>\<^sub>2 \<gamma>\<^sub>2" and
+    \<V>\<^sub>2: "infinite_variables_per_type \<V>\<^sub>2" and
+    D_in_N: "(D, \<V>\<^sub>2)\<in>N" and
+    "select\<^sub>G D\<^sub>G = clause.to_ground (select D \<cdot> \<gamma>\<^sub>2)"
+    "D \<cdot> \<gamma>\<^sub>2 = clause.from_ground D\<^sub>G"
+    using subst_stability[rule_format, OF D\<^sub>G_in_groundings]
+    by blast
+
+  then have
+    D\<^sub>G: "D\<^sub>G = clause.to_ground (D \<cdot> \<gamma>\<^sub>2)" and
+    select_from_D: "clause.from_ground (select\<^sub>G D\<^sub>G) = select D \<cdot> \<gamma>\<^sub>2"
+    by (simp_all add: select_ground_subst)
+
+  obtain \<rho>\<^sub>1 \<rho>\<^sub>2 \<gamma> :: "('f, 'v) subst" where
+    \<rho>\<^sub>1: "term_subst.is_renaming \<rho>\<^sub>1" and
+    \<rho>\<^sub>2: "term_subst.is_renaming \<rho>\<^sub>2" and
+    rename_apart: "clause.vars (C \<cdot> \<rho>\<^sub>1) \<inter> clause.vars (D \<cdot> \<rho>\<^sub>2) = {}" and
+    \<rho>\<^sub>1_is_welltyped: "is_welltyped_on (clause.vars C) \<V>\<^sub>1 \<rho>\<^sub>1" and
+    \<rho>\<^sub>2_is_welltyped: "is_welltyped_on (clause.vars D) \<V>\<^sub>2 \<rho>\<^sub>2" and
+    \<gamma>\<^sub>1_\<gamma>: "\<forall>x \<in> clause.vars C. \<gamma>\<^sub>1 x = (\<rho>\<^sub>1 \<odot> \<gamma>) x" and
+    \<gamma>\<^sub>2_\<gamma>: "\<forall>x \<in> clause.vars D. \<gamma>\<^sub>2 x = (\<rho>\<^sub>2 \<odot> \<gamma>) x"
+    using clause.obtain_merged_grounding[OF
+            \<gamma>\<^sub>1_is_welltyped \<gamma>\<^sub>2_is_welltyped C_grounding D_grounding \<V>\<^sub>2 clause.finite_vars].
+
+  have C_grounding: "clause.is_ground (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)"
+    using clause.subst_eq \<gamma>\<^sub>1_\<gamma> C_grounding
+    by fastforce
+
+  have C\<^sub>G: "C\<^sub>G = clause.to_ground (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>)"
+    using clause.subst_eq \<gamma>\<^sub>1_\<gamma> C\<^sub>G
+    by fastforce
+
+  have D_grounding: "clause.is_ground (D \<cdot> \<rho>\<^sub>2 \<odot> \<gamma>)"
+    using clause.subst_eq \<gamma>\<^sub>2_\<gamma> D_grounding
+    by fastforce
+
+  have D\<^sub>G: "D\<^sub>G = clause.to_ground (D \<cdot> \<rho>\<^sub>2 \<odot> \<gamma>)"
+    using clause.subst_eq \<gamma>\<^sub>2_\<gamma> D\<^sub>G
+    by fastforce
+
+  have \<rho>\<^sub>1_\<gamma>_is_welltyped: "is_welltyped_on (clause.vars C) \<V>\<^sub>1 (\<rho>\<^sub>1 \<odot> \<gamma>)"
+    using \<gamma>\<^sub>1_is_welltyped \<gamma>\<^sub>1_\<gamma>
+    by fastforce
+
+  have \<rho>\<^sub>2_\<gamma>_is_welltyped: "is_welltyped_on (clause.vars D) \<V>\<^sub>2 (\<rho>\<^sub>2 \<odot> \<gamma>)"
+    using \<gamma>\<^sub>2_is_welltyped \<gamma>\<^sub>2_\<gamma>
+    by fastforce
+
+  have select_from_C:
+    "clause.from_ground (select\<^sub>G (clause.to_ground (C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>))) = select C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>"
+  proof-
+    have "C \<cdot> \<gamma>\<^sub>1 = C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma>"
+      using \<gamma>\<^sub>1_\<gamma> clause.subst_eq
+      by fast
+
+    moreover have "select C \<cdot> \<gamma>\<^sub>1 = select C \<cdot> \<rho>\<^sub>1 \<cdot> \<gamma>"
+      using clause.subst_eq \<gamma>\<^sub>1_\<gamma> select_vars_subset
+      by (metis (no_types, lifting) clause.comp_subst.left.monoid_action_compatibility in_mono)
+
+    ultimately show ?thesis
+      using select_from_C
+      unfolding C\<^sub>G
+      by simp
+  qed
+
+  have select_from_D:
+    "clause.from_ground (select\<^sub>G (clause.to_ground (D \<cdot> \<rho>\<^sub>2 \<odot> \<gamma>))) = select D \<cdot> \<rho>\<^sub>2 \<odot> \<gamma>"
+  proof-
+    have "D \<cdot> \<gamma>\<^sub>2 = D \<cdot> \<rho>\<^sub>2 \<odot> \<gamma>"
+      using \<gamma>\<^sub>2_\<gamma> clause.subst_eq
+      by fast
+
+    moreover have "select D \<cdot> \<gamma>\<^sub>2 = select D \<cdot> \<rho>\<^sub>2 \<cdot> \<gamma>"
+      using clause.subst_eq \<gamma>\<^sub>2_\<gamma> select_vars_subset[of D]
+      by (metis (no_types, lifting) clause.comp_subst.left.monoid_action_compatibility in_mono)
+
+    ultimately show ?thesis
+      using select_from_D
+      unfolding D\<^sub>G
+      by simp
+  qed
+
+  obtain R where
+    R_grounding: "clause.is_ground (R \<cdot> \<gamma>)" and
+    R\<^sub>G: "R\<^sub>G = clause.to_ground (R \<cdot> \<gamma>)"
+    by (metis clause.all_subst_ident_if_ground clause.from_ground_inverse clause.ground_is_ground)
+
+  have "clause.welltyped_ground_instances (C, \<V>\<^sub>1) \<union> clause.welltyped_ground_instances (D, \<V>\<^sub>2) \<subseteq>
+          \<Union> (clause.welltyped_ground_instances ` N)"
+    using C_in_N D_in_N
+    by blast
+
+  then have \<iota>\<^sub>G_not_redundant:
+    "\<iota>\<^sub>G \<notin> ground.GRed_I
+          (clause.welltyped_ground_instances (C, \<V>\<^sub>1) \<union> clause.welltyped_ground_instances (D, \<V>\<^sub>2))"
+    using not_redundant ground.Red_I_of_subset
+    by blast
+
+  obtain R' \<V>\<^sub>3 where
+    resolution: "resolution (C, \<V>\<^sub>1) (D, \<V>\<^sub>2) (R', \<V>\<^sub>3)" and
+    inference_groundings: "\<iota>\<^sub>G \<in> inference_ground_instances (Infer [(C, \<V>\<^sub>1), (D, \<V>\<^sub>2)] (R', \<V>\<^sub>3))" and
+    R'_\<gamma>_R_\<gamma>: "R' \<cdot> \<gamma> = R \<cdot> \<gamma>"
+    sorry
+    (*using
+      resolution_lifting[OF
+        ground_resolution[unfolded C\<^sub>G D\<^sub>G R\<^sub>G]
+        \<rho>\<^sub>1 \<rho>\<^sub>2
+        rename_apart
+        C_grounding D_grounding R_grounding
+        select_from_C select_from_D
+        C_is_welltyped D_is_welltyped
+        \<rho>\<^sub>1_\<gamma>_is_welltyped \<rho>\<^sub>2_\<gamma>_is_welltyped
+        \<rho>\<^sub>1_is_welltyped \<rho>\<^sub>2_is_welltyped
+        \<V>\<^sub>1 \<V>\<^sub>2
+        \<iota>\<^sub>G_not_redundant[unfolded \<iota>\<^sub>G C\<^sub>G D\<^sub>G R\<^sub>G]]
+    unfolding \<iota>\<^sub>G R\<^sub>G C\<^sub>G D\<^sub>G .*)
+
+  let ?\<iota> = "Infer [(C, \<V>\<^sub>1), (D, \<V>\<^sub>2)] (R', \<V>\<^sub>3)"
+  show ?thesis
+  proof(rule that[OF _ inference_groundings])
+
+    show "?\<iota> \<in> Inf_from N"
+      using C_in_N D_in_N resolution
+      unfolding Inf_from_def inferences_def inference_system.Inf_from_def
+      by auto
+  qed
+qed
+
+lemma ground_instances:
+  assumes not_redundant: "\<iota>\<^sub>G \<notin> ground.Red_I (\<Union> (clause.welltyped_ground_instances ` N))"
+  obtains \<iota> where
+    "\<iota> \<in> Inf_from N"
+    "\<iota>\<^sub>G \<in> inference_ground_instances \<iota>"
+proof-
+  consider
+    (resolution) "\<iota>\<^sub>G \<in> ground.resolution_inferences" |
+    (factoring) "\<iota>\<^sub>G \<in> ground.factoring_inferences"
+    using \<iota>\<^sub>G_Inf_from
+    unfolding
+      ground.Inf_from_q_def
+      ground.G_Inf_def
+      inference_system.Inf_from_def
+    sorry
+
+  then show ?thesis
+  proof cases
+    case resolution
+
+    then show ?thesis
+      using that resolution_ground_instance not_redundant
+      by blast
+  next
+    case factoring
+
+    then show ?thesis
+      using that factoring_ground_instance
+      by blast
+  qed
+qed
+
+end
+end
+
 context resolution_calculus
 begin
 
@@ -652,7 +955,7 @@ proof-
     using obtain_subst_stable_on_select_grounding
     by blast
 
-  then interpret grounded_superposition_calculus
+  then interpret grounded_resolution_calculus
     where select\<^sub>G = select\<^sub>G
     by unfold_locales
 
@@ -672,7 +975,7 @@ proof (unfold static_empty_ord_inter_equiv_static_inter,
   fix select\<^sub>G
   assume "select\<^sub>G \<in> select\<^sub>G\<^sub>s"
 
-  then interpret grounded_superposition_calculus
+  then interpret grounded_resolution_calculus
     where select\<^sub>G = select\<^sub>G
     by unfold_locales (simp add: select\<^sub>G\<^sub>s_def)
 

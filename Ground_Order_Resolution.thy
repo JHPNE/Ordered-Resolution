@@ -55,6 +55,12 @@ where
 
 subsection \<open>Ground Layer\<close>
 
+abbreviation resolution_inferences where
+  "resolution_inferences \<equiv> {Infer [C, D] R | C D R. resolution C D R}"
+
+abbreviation factoring_inferences where
+  "factoring_inferences \<equiv> {Infer [C] D | C D. factoring C D}"
+
 definition G_Inf :: "'f gterm clause inference set" where
   "G_Inf =
     {Infer [D, C] R | D C R. resolution C D R} \<union>
@@ -62,7 +68,6 @@ definition G_Inf :: "'f gterm clause inference set" where
 
 abbreviation G_Bot :: "'f gterm clause set" where
   "G_Bot \<equiv> {{#}}"
-
 
 definition G_entails :: "'f gterm clause set \<Rightarrow> 'f gterm clause set \<Rightarrow> bool" where
   "G_entails N\<^sub>1 N\<^sub>2 \<longleftrightarrow> (\<forall> I. I \<TTurnstile>s N\<^sub>1 \<longrightarrow> I \<TTurnstile>s N\<^sub>2)"

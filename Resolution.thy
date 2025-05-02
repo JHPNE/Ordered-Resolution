@@ -5,7 +5,8 @@ theory Resolution
     First_Order_Clause.Nonground_Typing
     First_Order_Clause.Typed_Tiebreakers
     First_Order_Clause.Welltyped_IMGU
-
+    Saturation_Framework.Lifting_to_Non_Ground_Calculi
+  
     Ground_Order_Resolution
 begin
 

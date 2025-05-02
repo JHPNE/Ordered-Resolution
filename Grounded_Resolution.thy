@@ -1,6 +1,8 @@
 theory Grounded_Resolution
   imports
     Resolution
+    Ground_Order_Resolution
+
     First_Order_Clause.Grounded_Selection_Function
     First_Order_Clause.Nonground_Inference
     Saturation_Framework.Lifting_to_Non_Ground_Calculi
@@ -173,6 +175,53 @@ next
           ground.GRed_I (clause.welltyped_ground_instances (concl_of \<iota>))"
     using ground_inference_red_in_welltyped_ground_instances_of_concl
     by auto
+qed
+end
+
+context resolution_calculus
+begin
+
+sublocale
+  lifting_intersection
+    inferences
+    "{{#}}"
+    select\<^sub>G\<^sub>s
+    "ground_order_resolution_calculus.G_Inf (\<prec>\<^sub>t\<^sub>G)"
+    "\<lambda>_. ground_order_resolution_calculus.G_entails"
+    "ground_order_resolution_calculus.GRed_I (\<prec>\<^sub>t\<^sub>G)"
+    "\<lambda>_. ground_order_resolution_calculus.GRed_F (\<prec>\<^sub>t\<^sub>G)"
+    "\<bottom>\<^sub>F"
+    "\<lambda>_. clause.welltyped_ground_instances"
+    "\<lambda>select\<^sub>G. Some \<circ> (grounded_resolution_calculus.inference_ground_instances (\<prec>\<^sub>t) select\<^sub>G \<F>)"
+    tiebreakers.typed_tiebreakers
+proof (unfold_locales; (intro ballI)?)
+  show "select\<^sub>G\<^sub>s \<noteq> {}"
+    using select\<^sub>G_simple
+    unfolding select\<^sub>G\<^sub>s_def
+    by blast
+next
+  fix select\<^sub>G
+  assume "select\<^sub>G \<in> select\<^sub>G\<^sub>s"
+
+  then interpret grounded_resolution_calculus
+    where select\<^sub>G = select\<^sub>G
+    by unfold_locales (simp add: select\<^sub>G\<^sub>s_def)
+
+  show "consequence_relation ground.G_Bot ground.G_entails"
+    using ground.consequence_relation_axioms.
+
+  show "tiebreaker_lifting
+          \<bottom>\<^sub>F
+          inferences
+          ground.G_Bot
+          ground.G_entails
+          ground.G_Inf
+          ground.GRed_I
+          ground.GRed_F
+          clause.welltyped_ground_instances
+          (Some \<circ> inference_ground_instances)
+          tiebreakers.typed_tiebreakers"
+    by unfold_locales
 qed
 end
 end
