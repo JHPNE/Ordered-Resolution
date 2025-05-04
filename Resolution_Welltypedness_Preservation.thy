@@ -47,14 +47,17 @@ proof (cases "(C, \<V>)" "(D, \<V>)" rule: factoring.cases)
     unfolding factoringI
     by simp_all
 
-  then have "clause.is_welltyped \<V> (C' \<cdot> \<mu>)" "literal.is_welltyped \<V> (L\<^sub>1 \<cdot>l \<mu>)"
+  then have "clause.is_welltyped \<V> (C' \<cdot> \<mu>)" 
     using factoringI(3)
     unfolding factoringI
-    apply fastforce
-    by (metis Un_iff \<open>literal.is_welltyped \<V> L\<^sub>1\<close> clause.vars_add literal.welltyped_subst_stability
-        local.factoringI(3,4,5))
+    by simp
 
-  then show ?thesis
+  moreover have "literal.is_welltyped \<V> (L\<^sub>1 \<cdot>l \<mu>)"
+    using factoringI(3)
+    unfolding factoringI
+    by force
+
+  ultimately show ?thesis
     unfolding factoringI
     by simp
 qed
@@ -72,20 +75,20 @@ lemma factoring_preserves_typing:
 
 lemma resolution_preserves_typing_R:
   assumes
-    resolution: "resolution (C, \<V>\<^sub>1) (D, \<V>\<^sub>2) (R, \<V>\<^sub>3)" and
+    resolution: "resolution (D, \<V>\<^sub>2) (C, \<V>\<^sub>1)  (R, \<V>\<^sub>3)" and
     D_is_welltyped: "clause.is_welltyped \<V>\<^sub>2 D" and
     C_is_welltyped: "clause.is_welltyped \<V>\<^sub>1 C"
   shows "clause.is_welltyped \<V>\<^sub>3 R"
   using resolution
-proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: resolution.cases)
+proof (cases "(D, \<V>\<^sub>2)" "(C, \<V>\<^sub>1)" "(R, \<V>\<^sub>3)" rule: resolution.cases)
   case (resolutionI \<rho>\<^sub>1 \<rho>\<^sub>2 t\<^sub>1 t\<^sub>2 \<mu> L\<^sub>1 L\<^sub>2 C' D')
  
   then have welltyped_\<mu>:
-    "is_welltyped_on (clause.vars (D \<cdot> \<rho>\<^sub>2) \<union> clause.vars (C \<cdot> \<rho>\<^sub>1)) \<V>\<^sub>3 \<mu>"
+    "is_welltyped_on ( clause.vars (C \<cdot> \<rho>\<^sub>1) \<union> clause.vars (D \<cdot> \<rho>\<^sub>2)) \<V>\<^sub>3 \<mu>"
     by meson
 
   have "clause.is_welltyped \<V>\<^sub>3 (C \<cdot> \<rho>\<^sub>1)"
-    using C_is_welltyped clause.welltyped_renaming[OF resolutionI(3, 12)]
+    using C_is_welltyped clause.welltyped_renaming[OF resolutionI(3, 11)]
     by blast
 
   then have C\<mu>_is_welltyped: "clause.is_welltyped \<V>\<^sub>3 (C \<cdot> \<rho>\<^sub>1 \<odot> \<mu>)"
@@ -93,7 +96,7 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
     by simp
 
   have "clause.is_welltyped \<V>\<^sub>3 (D \<cdot> \<rho>\<^sub>2)"
-    using D_is_welltyped clause.welltyped_renaming[OF resolutionI(4, 11)]
+    using D_is_welltyped clause.welltyped_renaming[OF resolutionI(4, 12)]
     by blast
 
   then have D\<mu>_is_welltyped: "clause.is_welltyped \<V>\<^sub>3 (D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>)"
@@ -112,15 +115,15 @@ qed
 
 lemma resolution_preserves_typing_D:
   assumes
-    resolution: "resolution (C, \<V>\<^sub>1) (D, \<V>\<^sub>2) (R, \<V>\<^sub>3)" and
+    resolution: "resolution (D, \<V>\<^sub>2) (C, \<V>\<^sub>1) (R, \<V>\<^sub>3)" and
     R_is_welltyped: "clause.is_welltyped \<V>\<^sub>3 R"
   shows "clause.is_welltyped \<V>\<^sub>2 D"
   using resolution
-proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: resolution.cases)
+proof (cases "(D, \<V>\<^sub>2)" "(C, \<V>\<^sub>1)" "(R, \<V>\<^sub>3)" rule: resolution.cases)
   case (resolutionI \<rho>\<^sub>1 \<rho>\<^sub>2 t\<^sub>1 t\<^sub>2 \<mu> L\<^sub>1 L\<^sub>2 C' D')
 
    have \<mu>_is_welltyped:
-    "is_welltyped_on (clause.vars (D \<cdot> \<rho>\<^sub>2) \<union> clause.vars (C \<cdot> \<rho>\<^sub>1)) \<V>\<^sub>3 \<mu>"
+    "is_welltyped_on (clause.vars (C \<cdot> \<rho>\<^sub>1) \<union> clause.vars (D \<cdot> \<rho>\<^sub>2)) \<V>\<^sub>3 \<mu>"
      using resolutionI(6)
      by meson
 
@@ -134,7 +137,7 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
           by auto
   
         moreover have "\<forall>x\<in>clause.vars D'. \<V>\<^sub>2 x = \<V>\<^sub>3 (clause.rename \<rho>\<^sub>2 x)"
-          using resolutionI(11)
+          using resolutionI(12)
           unfolding resolutionI
           by simp
   
@@ -148,7 +151,7 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
      proof-
 
       have \<V>\<^sub>2_\<V>\<^sub>3: "\<forall>x \<in> literal.vars L\<^sub>2. \<V>\<^sub>2 x = \<V>\<^sub>3 (clause.rename \<rho>\<^sub>2 x)"
-        using resolutionI(11)
+        using resolutionI(12)
         unfolding resolutionI
         by auto
 
@@ -161,7 +164,7 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
         moreover have "welltyped \<V>\<^sub>2 t\<^sub>2 \<tau>"
             using
               \<tau>
-              resolutionI(11)
+              resolutionI(12)
               term.welltyped_renaming[OF resolutionI(4)]
             unfolding resolutionI
             by(auto simp: Set.ball_Un)
@@ -187,15 +190,15 @@ qed
 
 lemma resolution_preserves_typing_C:
   assumes
-    resolution: "resolution (C, \<V>\<^sub>1) (D, \<V>\<^sub>2) (R, \<V>\<^sub>3)" and
+    resolution: "resolution (D, \<V>\<^sub>2) (C, \<V>\<^sub>1) (R, \<V>\<^sub>3)" and
     R_is_welltyped: "clause.is_welltyped \<V>\<^sub>3 R"
   shows "clause.is_welltyped \<V>\<^sub>1 C"
   using resolution
-proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: resolution.cases)
+proof (cases "(D, \<V>\<^sub>2)" "(C, \<V>\<^sub>1)" "(R, \<V>\<^sub>3)" rule: resolution.cases)
   case (resolutionI \<rho>\<^sub>1 \<rho>\<^sub>2 t\<^sub>1 t\<^sub>2 \<mu> L\<^sub>1 L\<^sub>2 C' D')
 
   have \<mu>_is_welltyped:
-    "is_welltyped_on (clause.vars (D \<cdot> \<rho>\<^sub>2) \<union> clause.vars (C \<cdot> \<rho>\<^sub>1)) \<V>\<^sub>3 \<mu>"
+    "is_welltyped_on (clause.vars (C \<cdot> \<rho>\<^sub>1) \<union> clause.vars (D \<cdot> \<rho>\<^sub>2)) \<V>\<^sub>3 \<mu>"
      using resolutionI(6)
      by meson
 
@@ -209,7 +212,7 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
         by auto
 
       moreover have "\<forall>x\<in>clause.vars C'. \<V>\<^sub>1 x = \<V>\<^sub>3 (clause.rename \<rho>\<^sub>1 x)"
-        using resolutionI(12)
+        using resolutionI(11)
         unfolding resolutionI
         by simp
 
@@ -223,7 +226,7 @@ proof (cases "(C, \<V>\<^sub>1)" "(D, \<V>\<^sub>2)" "(R, \<V>\<^sub>3)" rule: r
     proof-
 
       have \<V>\<^sub>1_\<V>\<^sub>3: "\<forall>x \<in> literal.vars L\<^sub>1. \<V>\<^sub>1 x = \<V>\<^sub>3 (clause.rename \<rho>\<^sub>1 x)"
-        using resolutionI(12)
+        using resolutionI(11)
         unfolding resolutionI
         by auto
 

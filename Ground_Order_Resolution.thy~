@@ -40,7 +40,7 @@ where
     select D = {#} \<Longrightarrow>    
     is_strictly_maximal L\<^sub>D D \<Longrightarrow>
     R = (C' + D') \<Longrightarrow>
-    resolution C D R"
+    resolution D C R"
 
 inductive factoring ::
   "'f gterm clause \<Rightarrow> 'f gterm clause \<Rightarrow> bool"
@@ -56,14 +56,14 @@ where
 subsection \<open>Ground Layer\<close>
 
 abbreviation resolution_inferences where
-  "resolution_inferences \<equiv> {Infer [C, D] R | C D R. resolution C D R}"
+  "resolution_inferences \<equiv> {Infer [C, D] R | D C R. resolution D C R}"
 
 abbreviation factoring_inferences where
   "factoring_inferences \<equiv> {Infer [C] D | C D. factoring C D}"
 
 definition G_Inf :: "'f gterm clause inference set" where
   "G_Inf =
-    {Infer [D, C] R | D C R. resolution C D R} \<union>
+    {Infer [D, C] R | D C R. resolution D C R} \<union>
     {Infer [P] C | P C. factoring P C}"
 
 abbreviation G_Bot :: "'f gterm clause set" where
@@ -76,10 +76,10 @@ subsection \<open>Smaller Conclussions\<close>
 
 lemma ground_resolution_smaller_conclusion:
   assumes
-    step: "resolution C D R"
+    step: "resolution D C R"
   shows "R \<prec>\<^sub>c C"
   using step
-proof (cases C D R rule: resolution.cases)
+proof (cases D C R rule: resolution.cases)
   case (resolutionI L\<^sub>C C' L\<^sub>D D' t)
   have "\<forall>k\<in>#D'. k \<prec>\<^sub>l Pos t"
     using \<open>is_strictly_maximal L\<^sub>D D\<close> \<open>D = add_mset L\<^sub>D D'\<close>
@@ -172,7 +172,7 @@ next
   fix \<iota>
   have "concl_of \<iota> \<prec>\<^sub>c main_prem_of \<iota>"
     if \<iota>_def: "\<iota> = Infer [D, C] R" and
-      infer: "resolution C D R"
+      infer: "resolution D C R"
     for D C R
     unfolding \<iota>_def
     using infer

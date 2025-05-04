@@ -4,10 +4,10 @@ begin
 
 lemma (in ground_order_resolution_calculus) soundness_ground_resolution:
   assumes
-    step: "resolution C D R"
-  shows "G_entails {C, D} {R}"
+    step: "resolution D C R"
+  shows "G_entails {D, C} {R}"
   using step
-proof (cases C D R rule: resolution.cases)
+proof (cases D C R rule: resolution.cases)
   case (resolutionI L\<^sub>C C' L\<^sub>D D')
 
   show ?thesis

@@ -423,6 +423,13 @@ lemma (in ground_order_resolution_calculus) epsilon_subset_Union_epsilon:
   "\<And>C N. C \<in> N \<Longrightarrow> epsilon N C \<subseteq> (\<Union>D \<in> N. epsilon N D)"
   by auto
 
+lemma (in ground_order_resolution_calculus) true_cls_if_productive_epsilon:
+  assumes C_prod: "A \<in> epsilon N C" and "D \<in> N" and "C \<prec>\<^sub>c D"
+  shows "rewrite_sys N D \<TTurnstile> C"
+  by (meson C_prod assms(3) ground_order_resolution_calculus.epsilon_subset_if_less_cls ground_order_resolution_calculus.mem_epsilonE
+      ground_order_resolution_calculus_axioms in_mono is_strictly_maximal_def pos_literal_in_imp_true_cls)
+
+
 lemma (in ground_order_resolution_calculus) model_preconstruction:
   fixes
     N :: "'f gterm clause set" and
@@ -486,7 +493,7 @@ proof (induction C arbitrary: D rule: wfp_induct_rule)
         define \<iota> :: "'f gterm clause inference" where
             "\<iota> = Infer [D, C] (C' + D')"
 
-        have reso: "resolution C D (C' + D')"
+        have reso: "resolution D C (C' + D')"
         proof (rule resolutionI)
           show "C = add_mset (Neg A) C'"
             by (simp add: C_def)
@@ -689,10 +696,7 @@ proof (induction C arbitrary: D rule: wfp_induct_rule)
   next
     fix A assume "epsilon N C = {A}"
     thus ?thesis
-      unfolding entails_def
-      (*by (metis entails_def epsilon_subset_if_less_cls insert_iff mem_epsilonE pos_literal_in_imp_true_cls
-          set_mset_add_mset_insert subsetD that(2))*)
-      sorry
+      by (simp add: entails_def that(1,2) true_cls_if_productive_epsilon)
   qed
 
   ultimately show ?case

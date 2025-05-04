@@ -238,7 +238,7 @@ lemma resolution_lifting:
                     clause.welltyped_ground_instances (D, \<V>\<^sub>2)" and
     [simp]: "\<iota>\<^sub>G \<equiv> Infer [D\<^sub>G, C\<^sub>G] R\<^sub>G"
   assumes
-    ground_resolution: "ground.resolution C\<^sub>G D\<^sub>G R\<^sub>G" and
+    ground_resolution: "ground.resolution D\<^sub>G C\<^sub>G R\<^sub>G" and
     \<rho>\<^sub>1: "term_subst.is_renaming \<rho>\<^sub>1" and
     \<rho>\<^sub>2: "term_subst.is_renaming \<rho>\<^sub>2" and
     rename_apart: "clause.vars (C \<cdot> \<rho>\<^sub>1) \<inter> clause.vars (D \<cdot> \<rho>\<^sub>2) = {}" and
@@ -258,11 +258,11 @@ lemma resolution_lifting:
     not_redundant: "\<iota>\<^sub>G \<notin> ground.Red_I N\<^sub>G"
   obtains R' \<V>\<^sub>3
   where
-    "resolution (C, \<V>\<^sub>1) (D, \<V>\<^sub>2) (R', \<V>\<^sub>3)"
+    "resolution (D, \<V>\<^sub>2) (C, \<V>\<^sub>1)  (R', \<V>\<^sub>3)"
     "\<iota>\<^sub>G \<in> inference_ground_instances (Infer [(D, \<V>\<^sub>2), (C, \<V>\<^sub>1)] (R', \<V>\<^sub>3))"
     "R' \<cdot> \<gamma> = R \<cdot> \<gamma>"
   using ground_resolution
-proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
+proof(cases D\<^sub>G C\<^sub>G R\<^sub>G rule: ground.resolution.cases)
   case ground_resolutionI: (resolutionI L\<^sub>G\<^sub>C C\<^sub>G' L\<^sub>G\<^sub>D D\<^sub>G' t\<^sub>G)
 
   have C_\<gamma>: "C \<cdot> \<rho>\<^sub>1 \<odot> \<gamma> = clause.from_ground (add_mset L\<^sub>G\<^sub>C C\<^sub>G')"
@@ -461,19 +461,10 @@ proof(cases C\<^sub>G D\<^sub>G R\<^sub>G rule: ground.resolution.cases)
   show ?thesis
   proof(rule that)
 
-    show resolution: "resolution (C, \<V>\<^sub>1) (D, \<V>\<^sub>2) (R', \<V>\<^sub>3)"
+    show resolution: "resolution (D, \<V>\<^sub>2) (C, \<V>\<^sub>1) (R', \<V>\<^sub>3)"
     proof(rule resolutionI;
           ((rule \<rho>\<^sub>1 \<rho>\<^sub>2 C D l\<^sub>C l\<^sub>D imgu rename_apart \<rho>\<^sub>1_is_welltyped \<rho>\<^sub>2_is_welltyped \<V>\<^sub>1 \<V>\<^sub>2 R'
                \<V>\<^sub>1_\<V>\<^sub>3 \<V>\<^sub>2_\<V>\<^sub>3)+)?)
-      show "clause.vars (D \<cdot> \<rho>\<^sub>2) \<inter> clause.vars (C \<cdot> \<rho>\<^sub>1) = {}"
-        using rename_apart
-        by blast
-    next
-      show "(\<exists>\<tau>. welltyped \<V>\<^sub>3 (t\<^sub>C \<cdot>t \<rho>\<^sub>1) \<tau> \<and> welltyped \<V>\<^sub>3 (t\<^sub>D \<cdot>t \<rho>\<^sub>2) \<tau>) \<and>
-      is_welltyped_on (clause.vars (D \<cdot> \<rho>\<^sub>2) \<union> clause.vars (C \<cdot> \<rho>\<^sub>1)) \<V>\<^sub>3 \<mu> \<and> term.is_imgu \<mu> {{t\<^sub>C \<cdot>t \<rho>\<^sub>1, t\<^sub>D \<cdot>t \<rho>\<^sub>2}}"
-        using imgu
-        by blast
-    next
       show "\<not> C \<cdot> \<rho>\<^sub>1 \<odot> \<mu> \<preceq>\<^sub>c D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>"
       proof(rule clause.order.ground_less_not_less_eq)
 
@@ -747,10 +738,9 @@ lemma resolution_ground_instance:
     "\<iota>\<^sub>G \<in> inference_ground_instances \<iota>"
 proof-
 obtain C\<^sub>G D\<^sub>G R\<^sub>G where
-    \<iota>\<^sub>G : "\<iota>\<^sub>G = Infer [C\<^sub>G, D\<^sub>G] R\<^sub>G" and
-    ground_resolution: "ground.resolution C\<^sub>G D\<^sub>G R\<^sub>G"
+    \<iota>\<^sub>G : "\<iota>\<^sub>G = Infer [D\<^sub>G, C\<^sub>G] R\<^sub>G" and
+    ground_resolution: "ground.resolution D\<^sub>G C\<^sub>G R\<^sub>G"
     using assms(1)
-    by blast
 
   have
     C\<^sub>G_in_groundings: "C\<^sub>G \<in> \<Union> (clause.welltyped_ground_instances ` N)" and
@@ -878,23 +868,20 @@ obtain C\<^sub>G D\<^sub>G R\<^sub>G where
 
   obtain R' \<V>\<^sub>3 where
     resolution: "resolution (C, \<V>\<^sub>1) (D, \<V>\<^sub>2) (R', \<V>\<^sub>3)" and
-    inference_groundings: "\<iota>\<^sub>G \<in> inference_ground_instances (Infer [(D, \<V>\<^sub>2), (C, \<V>\<^sub>1)] (R', \<V>\<^sub>3))" and
+    inference_groundings: "\<iota>\<^sub>G \<in> inference_ground_instances (Infer [(C, \<V>\<^sub>1), (D, \<V>\<^sub>2)] (R', \<V>\<^sub>3))" and
     R'_\<gamma>_R_\<gamma>: "R' \<cdot> \<gamma> = R \<cdot> \<gamma>"
-    (*using
-      resolution_lifting[OF
-        ground_resolution[unfolded C\<^sub>G D\<^sub>G R\<^sub>G]
-        \<rho>\<^sub>1 \<rho>\<^sub>2
-        rename_apart
-        C_grounding D_grounding R_grounding
-        select_from_C select_from_D
-        C_is_welltyped D_is_welltyped
-        \<rho>\<^sub>1_\<gamma>_is_welltyped \<rho>\<^sub>2_\<gamma>_is_welltyped
-        \<rho>\<^sub>1_is_welltyped \<rho>\<^sub>2_is_welltyped
-        \<V>\<^sub>1 \<V>\<^sub>2
-        \<iota>\<^sub>G_not_redundant[unfolded \<iota>\<^sub>G D\<^sub>G C\<^sub>G R\<^sub>G]]
-    unfolding \<iota>\<^sub>G R\<^sub>G C\<^sub>G D\<^sub>G *)
-    sorry
-
+    using resolution_lifting[OF ground_resolution[unfolded C\<^sub>G D\<^sub>G R\<^sub>G]
+      \<rho>\<^sub>1 \<rho>\<^sub>2
+      rename_apart
+      C_grounding D_grounding R_grounding 
+      select_from_C select_from_D
+      C_is_welltyped D_is_welltyped
+      \<rho>\<^sub>1_\<gamma>_is_welltyped \<rho>\<^sub>2_\<gamma>_is_welltyped
+      \<rho>\<^sub>1_is_welltyped \<rho>\<^sub>2_is_welltyped
+      \<V>\<^sub>1 \<V>\<^sub>2
+      \<iota>\<^sub>G_not_redundant[unfolded \<iota>\<^sub>G C\<^sub>G D\<^sub>G R\<^sub>G]]
+    unfolding \<iota>\<^sub>G R\<^sub>G C\<^sub>G D\<^sub>G .
+   
   let ?\<iota> = "Infer [(C, \<V>\<^sub>1), (D, \<V>\<^sub>2)] (R', \<V>\<^sub>3)"
   show ?thesis
   proof(rule that[OF _ inference_groundings])
@@ -920,29 +907,24 @@ proof-
       ground.Inf_from_q_def
       ground.G_Inf_def
       inference_system.Inf_from_def
-    apply auto
+    sorry
 
   then show ?thesis
   proof cases
-    case superposition
+    case resolution
 
     then show ?thesis
-      using that superposition_ground_instance not_redundant
+      using that resolution_ground_instance not_redundant
       by blast
   next
-    case eq_resolution
+    case factoring
 
     then show ?thesis
-      using that eq_resolution_ground_instance
-      by blast
-  next
-    case eq_factoring
-
-    then show ?thesis
-      using that eq_factoring_ground_instance
+      using that factoring_ground_instance
       by blast
   qed
 qed
+
 end
 end
 
