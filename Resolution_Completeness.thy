@@ -1,7 +1,7 @@
 theory Resolution_Completeness
   imports
     Grounded_Resolution
-    Ground_Order_Resolution_Completeness
+    Ground_Ordered_Resolution_Completeness
     Resolution_Welltypedness_Preservation
 
     First_Order_Clause.Nonground_Entailment

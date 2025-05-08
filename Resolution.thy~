@@ -50,20 +50,20 @@ where
     L\<^sub>1 = (Neg t\<^sub>1) \<Longrightarrow>
     L\<^sub>2 = (Pos t\<^sub>2) \<Longrightarrow>
     R = (C' \<cdot> \<rho>\<^sub>1 + D' \<cdot> \<rho>\<^sub>2) \<cdot> \<mu> \<Longrightarrow>
-    resolution (C, \<V>\<^sub>1) (D, \<V>\<^sub>2) (R, \<V>\<^sub>3)"
+    resolution (D, \<V>\<^sub>2) (C, \<V>\<^sub>1) (R, \<V>\<^sub>3)"
 if
   "infinite_variables_per_type \<V>\<^sub>1"
   "infinite_variables_per_type \<V>\<^sub>2"
   "term_subst.is_renaming \<rho>\<^sub>1"
   "term_subst.is_renaming \<rho>\<^sub>2"
-  "clause.vars (D \<cdot> \<rho>\<^sub>2) \<inter> clause.vars (C \<cdot> \<rho>\<^sub>1) = {}"
-  "welltyped_imgu_on (clause.vars (D \<cdot> \<rho>\<^sub>2) \<union> clause.vars (C \<cdot> \<rho>\<^sub>1)) \<V>\<^sub>3 (t\<^sub>1 \<cdot>t \<rho>\<^sub>1) (t\<^sub>2 \<cdot>t \<rho>\<^sub>2) \<mu>"
+  "clause.vars (C \<cdot> \<rho>\<^sub>1) \<inter> clause.vars (D \<cdot> \<rho>\<^sub>2) = {}"
+  "welltyped_imgu_on (clause.vars (C \<cdot> \<rho>\<^sub>1) \<union> clause.vars (D \<cdot> \<rho>\<^sub>2)) \<V>\<^sub>3 (t\<^sub>1 \<cdot>t \<rho>\<^sub>1) (t\<^sub>2 \<cdot>t \<rho>\<^sub>2) \<mu>"
   "\<not> (C \<cdot> \<rho>\<^sub>1 \<odot> \<mu> \<preceq>\<^sub>c D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>)"
   "select C = {#} \<and> is_maximal (L\<^sub>1 \<cdot>l \<rho>\<^sub>1 \<odot> \<mu>) (C \<cdot> \<rho>\<^sub>1 \<odot> \<mu>) \<or> is_maximal ( L\<^sub>1 \<cdot>l \<rho>\<^sub>1 \<odot> \<mu>) ((select C) \<cdot> \<rho>\<^sub>1 \<odot> \<mu>)"
   "select D = {#}"
   "is_strictly_maximal (L\<^sub>2 \<cdot>l \<rho>\<^sub>2 \<odot> \<mu>) (D \<cdot> \<rho>\<^sub>2 \<odot> \<mu>)"
-  "\<forall>x \<in> clause.vars D. \<V>\<^sub>2 x = \<V>\<^sub>3 (term.rename \<rho>\<^sub>2 x)"
   "\<forall>x \<in> clause.vars C. \<V>\<^sub>1 x = \<V>\<^sub>3 (term.rename \<rho>\<^sub>1 x)"
+  "\<forall>x \<in> clause.vars D. \<V>\<^sub>2 x = \<V>\<^sub>3 (term.rename \<rho>\<^sub>2 x)"
   "is_welltyped_on (clause.vars C) \<V>\<^sub>1 \<rho>\<^sub>1"
   "is_welltyped_on (clause.vars D) \<V>\<^sub>2 \<rho>\<^sub>2"
 
@@ -71,7 +71,7 @@ abbreviation factoring_inferences where
 "factoring_inferences \<equiv> { Infer [C] D | C D. factoring C D}"
 
 abbreviation resolution_inferences where
-"resolution_inferences \<equiv> { Infer [C, D] R | C D R. resolution C D R}"
+"resolution_inferences \<equiv> { Infer [D, C] R | D C R. resolution D C R}"
 
 definition inferences :: "('f, 'v, 'ty) typed_clause inference set" where
 "inferences \<equiv> resolution_inferences \<union> factoring_inferences"

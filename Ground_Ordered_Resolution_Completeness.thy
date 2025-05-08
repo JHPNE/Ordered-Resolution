@@ -1,10 +1,12 @@
-theory Ground_Order_Resolution_Completeness
-  imports Ground_Order_Resolution Relation_Extra
+theory Ground_Ordered_Resolution_Completeness
+  imports 
+    Ground_Ordered_Resolution 
+    Relation_Extra
 begin
 
 subsection \<open>Mode Construction\<close>
 
-context ground_order_resolution_calculus
+context ground_ordered_resolution_calculus
 begin
 
 context 
@@ -34,7 +36,7 @@ declare epsilon.simps[simp del]
 end
 end
 
-lemma (in ground_order_resolution_calculus) epsilon_eq_empty_or_singleton:
+lemma (in ground_ordered_resolution_calculus) epsilon_eq_empty_or_singleton:
   "epsilon N C = {} \<or> (\<exists>A. epsilon N C = {A})"
 proof -
   have "\<exists>\<^sub>\<le>\<^sub>1A. is_strictly_maximal (Pos A) C"
@@ -59,15 +61,15 @@ proof -
         insertCI mem_Collect_eq)
 qed
 
-definition (in ground_order_resolution_calculus) rewrite_sys where
+definition (in ground_ordered_resolution_calculus) rewrite_sys where
   "rewrite_sys N C \<equiv> (\<Union>D \<in> {D \<in> N. D \<prec>\<^sub>c C}. epsilon N D)"
 
-lemma (in ground_order_resolution_calculus) rewrite_sys_subset_if_less_cls:
+lemma (in ground_ordered_resolution_calculus) rewrite_sys_subset_if_less_cls:
 "C \<prec>\<^sub>c D \<longrightarrow> rewrite_sys N C \<subseteq> rewrite_sys N D"
   unfolding rewrite_sys_def
   by fastforce
 
-lemma (in ground_order_resolution_calculus) mem_epsilonE:
+lemma (in ground_ordered_resolution_calculus) mem_epsilonE:
   assumes rule_in: "A \<in> epsilon N C"
   obtains C' where
     "C \<in> N" and
@@ -79,7 +81,7 @@ lemma (in ground_order_resolution_calculus) mem_epsilonE:
   unfolding epsilon.simps[of N C] mem_Collect_eq Let_def rewrite_sys_def
   by (metis (no_types, lifting))
 
-lemma (in ground_order_resolution_calculus) epsilon_unfold: "epsilon N C = {A | A C'.
+lemma (in ground_ordered_resolution_calculus) epsilon_unfold: "epsilon N C = {A | A C'.
     C \<in> N \<and>
     C = add_mset (Pos A) C' \<and>
     select C = {#} \<and>
@@ -87,11 +89,11 @@ lemma (in ground_order_resolution_calculus) epsilon_unfold: "epsilon N C = {A | 
     \<not> rewrite_sys N C \<TTurnstile> C}"
   by (simp add: epsilon.simps[of N C] rewrite_sys_def)
 
-lemma (in ground_order_resolution_calculus) epsilon_subset_if_less_cls: "C \<prec>\<^sub>c D \<Longrightarrow> epsilon N C \<subseteq> rewrite_sys N D"
+lemma (in ground_ordered_resolution_calculus) epsilon_subset_if_less_cls: "C \<prec>\<^sub>c D \<Longrightarrow> epsilon N C \<subseteq> rewrite_sys N D"
   unfolding rewrite_sys_def
   using epsilon_unfold by blast
 
-lemma (in ground_order_resolution_calculus)
+lemma (in ground_ordered_resolution_calculus)
   assumes
     "D \<preceq>\<^sub>c C" and
     C_prod: "A \<in> epsilon N C" and
@@ -154,7 +156,7 @@ proof -
     by metis+
 qed
 
-lemma (in ground_order_resolution_calculus) less_trm_iff_less_cls_if_mem_epsilon:
+lemma (in ground_ordered_resolution_calculus) less_trm_iff_less_cls_if_mem_epsilon:
   assumes C_prod: "A\<^sub>C \<in> epsilon N C" and D_prod: "A\<^sub>D \<in> epsilon N D"
   shows "A\<^sub>C \<prec>\<^sub>t A\<^sub>D \<longleftrightarrow> C \<prec>\<^sub>c D"
 proof -
@@ -218,7 +220,7 @@ proof -
   qed
 qed
 
-lemma (in ground_order_resolution_calculus) false_cls_if_productive_epsilon:
+lemma (in ground_ordered_resolution_calculus) false_cls_if_productive_epsilon:
   assumes C_prod: "A \<in> epsilon N C" and "D \<in> N" and "C \<prec>\<^sub>c D"
   shows "\<not> rewrite_sys N D \<TTurnstile> C - {#Pos A#}"
 proof -
@@ -310,13 +312,13 @@ proof -
     by (simp add: C_def)
 qed
 
-lemma (in ground_order_resolution_calculus) neg_notin_Interp_not_produce:
+lemma (in ground_ordered_resolution_calculus) neg_notin_Interp_not_produce:
   "Neg A \<in># C \<Longrightarrow> A \<notin> rewrite_sys N D \<union> epsilon N D \<Longrightarrow> C \<preceq>\<^sub>c D \<Longrightarrow> A \<notin> epsilon N D''"
   by (smt (verit, del_insts) Neg_atm_of_iff UN_I Un_iff clause.order.dual_order.strict_trans1
       clause.order.not_less less_trm_if_neg literal.sel(2) mem_Collect_eq mem_epsilonE rewrite_sys_def
       term.order.dual_order.asym)
 
-lemma (in ground_order_resolution_calculus) lift_interp_entails:
+lemma (in ground_ordered_resolution_calculus) lift_interp_entails:
   assumes
     D_in: "D \<in> N" and
     D_entailed: "rewrite_sys N D \<TTurnstile> D" and
@@ -343,14 +345,14 @@ proof -
     hence "A \<notin> rewrite_sys N C"
       using neg_notin_Interp_not_produce
       by (smt (verit, ccfv_threshold) D_entailed L_in UN_E Un_iff clause.order.leI
-          clause.order.order.strict_iff_not ground_order_resolution_calculus.mem_epsilonE
-          ground_order_resolution_calculus_axioms rewrite_sys_def)
+          clause.order.order.strict_iff_not ground_ordered_resolution_calculus.mem_epsilonE
+          ground_ordered_resolution_calculus_axioms rewrite_sys_def)
     thus "rewrite_sys N C \<TTurnstile> D"
       using L_in \<open>L = Neg A\<close> by blast
   qed
 qed
 
-lemma (in ground_order_resolution_calculus) produces_imp_in_interp:
+lemma (in ground_ordered_resolution_calculus) produces_imp_in_interp:
   assumes "Neg A \<in># C" and D_prod: "A \<in> epsilon N D"
   shows "A \<in> rewrite_sys N C"
 proof -
@@ -381,7 +383,7 @@ proof -
   qed
 qed
 
-lemma (in ground_order_resolution_calculus) split_Union_epsilon:
+lemma (in ground_ordered_resolution_calculus) split_Union_epsilon:
   assumes D_in: "D \<in> N"
   shows "(\<Union>C \<in> N. epsilon N C) =
     rewrite_sys N D \<union> epsilon N D \<union> (\<Union>C \<in> {C \<in> N. D \<prec>\<^sub>c C}. epsilon N C)"
@@ -403,12 +405,12 @@ proof -
     by (simp add: rewrite_sys_def)
 qed
 
-lemma (in ground_order_resolution_calculus) split_Union_epsilon':
+lemma (in ground_ordered_resolution_calculus) split_Union_epsilon':
   assumes D_in: "D \<in> N"
   shows "(\<Union>C \<in> N. epsilon N C) = rewrite_sys N D \<union> (\<Union>C \<in> {C \<in> N. D \<preceq>\<^sub>c C}. epsilon N C)"
   using split_Union_epsilon[OF D_in] D_in by auto
 
-lemma (in ground_order_resolution_calculus) lift_entailment_to_Union:
+lemma (in ground_ordered_resolution_calculus) lift_entailment_to_Union:
   fixes N D
   assumes
     D_in: "D \<in> N" and
@@ -419,18 +421,18 @@ lemma (in ground_order_resolution_calculus) lift_entailment_to_Union:
   by (smt (verit, best) D_in R\<^sub>D_entails_D UN_iff produces_imp_in_interp split_Union_epsilon'
       subsetD sup_ge1 true_cls_def true_lit_iff)
 
-lemma (in ground_order_resolution_calculus) epsilon_subset_Union_epsilon:
+lemma (in ground_ordered_resolution_calculus) epsilon_subset_Union_epsilon:
   "\<And>C N. C \<in> N \<Longrightarrow> epsilon N C \<subseteq> (\<Union>D \<in> N. epsilon N D)"
   by auto
 
-lemma (in ground_order_resolution_calculus) true_cls_if_productive_epsilon:
+lemma (in ground_ordered_resolution_calculus) true_cls_if_productive_epsilon:
   assumes C_prod: "A \<in> epsilon N C" and "D \<in> N" and "C \<prec>\<^sub>c D"
   shows "rewrite_sys N D \<TTurnstile> C"
-  by (meson C_prod assms(3) ground_order_resolution_calculus.epsilon_subset_if_less_cls ground_order_resolution_calculus.mem_epsilonE
-      ground_order_resolution_calculus_axioms in_mono is_strictly_maximal_def pos_literal_in_imp_true_cls)
+  by (meson C_prod assms(3) ground_ordered_resolution_calculus.epsilon_subset_if_less_cls ground_ordered_resolution_calculus.mem_epsilonE
+      ground_ordered_resolution_calculus_axioms in_mono is_strictly_maximal_def pos_literal_in_imp_true_cls)
 
 
-lemma (in ground_order_resolution_calculus) model_preconstruction:
+lemma (in ground_ordered_resolution_calculus) model_preconstruction:
   fixes
     N :: "'f gterm clause set" and
     C :: "'f gterm clause"
@@ -705,7 +707,7 @@ qed
         
 
 
-lemma (in ground_order_resolution_calculus) model_construction:
+lemma (in ground_ordered_resolution_calculus) model_construction:
   fixes
     N :: "'f gterm clause set" and
     C :: "'f gterm clause"
@@ -734,7 +736,7 @@ qed
     
 subsection \<open>Static Refutational Completeness\<close>
 
-lemma (in ground_order_resolution_calculus) statically_complete:
+lemma (in ground_ordered_resolution_calculus) statically_complete:
   fixes N :: "'f gterm clause set"
   assumes "saturated N" and "G_entails N {{#}}"
   shows "{#} \<in> N"
@@ -758,7 +760,7 @@ proof (rule contrapos_pp)
     qed
   qed
 
-  sublocale ground_order_resolution_calculus \<subseteq> statically_complete_calculus where
+  sublocale ground_ordered_resolution_calculus \<subseteq> statically_complete_calculus where
     Bot = G_Bot and
     Inf = G_Inf and
     entails = G_entails and

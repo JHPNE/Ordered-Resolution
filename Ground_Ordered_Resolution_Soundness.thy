@@ -1,8 +1,8 @@
-theory Ground_Order_Resolution_Soundness
-  imports Ground_Order_Resolution
+theory Ground_Ordered_Resolution_Soundness
+  imports Ground_Ordered_Resolution
 begin
 
-lemma (in ground_order_resolution_calculus) soundness_ground_resolution:
+lemma (in ground_ordered_resolution_calculus) soundness_ground_resolution:
   assumes
     step: "resolution D C R"
   shows "G_entails {D, C} {R}"
@@ -58,7 +58,7 @@ proof (cases D C R rule: resolution.cases)
   qed
 qed
 
-lemma (in ground_order_resolution_calculus) soundness_ground_factoring:
+lemma (in ground_ordered_resolution_calculus) soundness_ground_factoring:
   assumes step: "factoring C D"
   shows "G_entails {C} {D}"
   using step
@@ -96,7 +96,7 @@ proof (cases C D rule: factoring.cases)
   qed
 qed
 
-sublocale ground_order_resolution_calculus \<subseteq> sound_inference_system where
+sublocale ground_ordered_resolution_calculus \<subseteq> sound_inference_system where
   Inf = G_Inf and
   Bot = G_Bot and
   entails = G_entails

@@ -1,7 +1,7 @@
 theory Grounded_Resolution
   imports
     Resolution
-    Ground_Order_Resolution
+    Ground_Ordered_Resolution
 
     First_Order_Clause.Grounded_Selection_Function
     First_Order_Clause.Nonground_Inference
@@ -23,7 +23,7 @@ locale grounded_resolution_calculus =
 begin
 
 
-sublocale ground: ground_order_resolution_calculus where
+sublocale ground: ground_ordered_resolution_calculus where
   less\<^sub>t = "(\<prec>\<^sub>t\<^sub>G)" and select = select\<^sub>G
 rewrites
   "multiset_extension.multiset_extension (\<prec>\<^sub>t\<^sub>G) ground.literal_to_mset = (\<prec>\<^sub>l\<^sub>G)" and
@@ -186,10 +186,10 @@ sublocale
     inferences
     "{{#}}"
     select\<^sub>G\<^sub>s
-    "ground_order_resolution_calculus.G_Inf (\<prec>\<^sub>t\<^sub>G)"
-    "\<lambda>_. ground_order_resolution_calculus.G_entails"
-    "ground_order_resolution_calculus.GRed_I (\<prec>\<^sub>t\<^sub>G)"
-    "\<lambda>_. ground_order_resolution_calculus.GRed_F (\<prec>\<^sub>t\<^sub>G)"
+    "ground_ordered_resolution_calculus.G_Inf (\<prec>\<^sub>t\<^sub>G)"
+    "\<lambda>_. ground_ordered_resolution_calculus.G_entails"
+    "ground_ordered_resolution_calculus.GRed_I (\<prec>\<^sub>t\<^sub>G)"
+    "\<lambda>_. ground_ordered_resolution_calculus.GRed_F (\<prec>\<^sub>t\<^sub>G)"
     "\<bottom>\<^sub>F"
     "\<lambda>_. clause.welltyped_ground_instances"
     "\<lambda>select\<^sub>G. Some \<circ> (grounded_resolution_calculus.inference_ground_instances (\<prec>\<^sub>t) select\<^sub>G \<F>)"

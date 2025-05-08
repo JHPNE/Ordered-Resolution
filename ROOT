@@ -6,8 +6,8 @@ session Ordered_Resolution = Saturation_Framework_Extensions +
     Abstract_Substitution
 
 theories (* These theories contain the main results. *)
-    Ground_Order_Resolution_Completeness
-    Ground_Order_Resolution_Soundness
-    Ground_Order_Resolution
+    Ground_Ordered_Resolution_Completeness
+    Ground_Ordered_Resolution_Soundness
+    Ground_Ordered_Resolution
     Resolution_Completeness
     Resolution_Welltypedness_Preservation

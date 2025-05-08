@@ -1,4 +1,4 @@
-theory Ground_Order_Resolution
+theory Ground_Ordered_Resolution
   imports
     Main
 
@@ -17,7 +17,7 @@ begin
 
 section \<open>Resolution Calculus\<close>
 
-locale ground_order_resolution_calculus =
+locale ground_ordered_resolution_calculus =
   ground_order where less\<^sub>t = less\<^sub>t +
   selection_function select 
 for
@@ -120,7 +120,7 @@ end
 
 subsection \<open>Redundancy Criterion\<close>
 
-sublocale ground_order_resolution_calculus \<subseteq> consequence_relation where
+sublocale ground_ordered_resolution_calculus \<subseteq> consequence_relation where
   Bot = G_Bot and
   entails = G_entails
 proof unfold_locales
@@ -153,7 +153,7 @@ next
     by simp
 qed
 
-sublocale ground_order_resolution_calculus \<subseteq> calculus_with_finitary_standard_redundancy where
+sublocale ground_ordered_resolution_calculus \<subseteq> calculus_with_finitary_standard_redundancy where
   Inf = G_Inf and
   Bot = G_Bot and
   entails = G_entails and

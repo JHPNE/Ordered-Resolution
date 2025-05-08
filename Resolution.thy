@@ -7,7 +7,7 @@ theory Resolution
     First_Order_Clause.Welltyped_IMGU
     Saturation_Framework.Lifting_to_Non_Ground_Calculi
   
-    Ground_Order_Resolution
+    Ground_Ordered_Resolution
 begin
 
 locale resolution_calculus =

@@ -258,7 +258,7 @@ lemma resolution_lifting:
     not_redundant: "\<iota>\<^sub>G \<notin> ground.Red_I N\<^sub>G"
   obtains R' \<V>\<^sub>3
   where
-    "resolution (D, \<V>\<^sub>2) (C, \<V>\<^sub>1)  (R', \<V>\<^sub>3)"
+    "resolution (D, \<V>\<^sub>2) (C, \<V>\<^sub>1) (R', \<V>\<^sub>3)"
     "\<iota>\<^sub>G \<in> inference_ground_instances (Infer [(D, \<V>\<^sub>2), (C, \<V>\<^sub>1)] (R', \<V>\<^sub>3))"
     "R' \<cdot> \<gamma> = R \<cdot> \<gamma>"
   using ground_resolution
@@ -737,10 +737,11 @@ lemma resolution_ground_instance:
     "\<iota> \<in> Inf_from N"
     "\<iota>\<^sub>G \<in> inference_ground_instances \<iota>"
 proof-
-obtain C\<^sub>G D\<^sub>G R\<^sub>G where
+  obtain C\<^sub>G D\<^sub>G R\<^sub>G where
     \<iota>\<^sub>G : "\<iota>\<^sub>G = Infer [D\<^sub>G, C\<^sub>G] R\<^sub>G" and
     ground_resolution: "ground.resolution D\<^sub>G C\<^sub>G R\<^sub>G"
     using assms(1)
+    by blast
 
   have
     C\<^sub>G_in_groundings: "C\<^sub>G \<in> \<Union> (clause.welltyped_ground_instances ` N)" and
@@ -867,8 +868,8 @@ obtain C\<^sub>G D\<^sub>G R\<^sub>G where
     by blast
 
   obtain R' \<V>\<^sub>3 where
-    resolution: "resolution (C, \<V>\<^sub>1) (D, \<V>\<^sub>2) (R', \<V>\<^sub>3)" and
-    inference_groundings: "\<iota>\<^sub>G \<in> inference_ground_instances (Infer [(C, \<V>\<^sub>1), (D, \<V>\<^sub>2)] (R', \<V>\<^sub>3))" and
+    resolution: "resolution (D, \<V>\<^sub>2) (C, \<V>\<^sub>1) (R', \<V>\<^sub>3)" and
+    inference_groundings: "\<iota>\<^sub>G \<in> inference_ground_instances (Infer [(D, \<V>\<^sub>2), (C, \<V>\<^sub>1)] (R', \<V>\<^sub>3))" and
     R'_\<gamma>_R_\<gamma>: "R' \<cdot> \<gamma> = R \<cdot> \<gamma>"
     using resolution_lifting[OF ground_resolution[unfolded C\<^sub>G D\<^sub>G R\<^sub>G]
       \<rho>\<^sub>1 \<rho>\<^sub>2
@@ -882,7 +883,7 @@ obtain C\<^sub>G D\<^sub>G R\<^sub>G where
       \<iota>\<^sub>G_not_redundant[unfolded \<iota>\<^sub>G C\<^sub>G D\<^sub>G R\<^sub>G]]
     unfolding \<iota>\<^sub>G R\<^sub>G C\<^sub>G D\<^sub>G .
    
-  let ?\<iota> = "Infer [(C, \<V>\<^sub>1), (D, \<V>\<^sub>2)] (R', \<V>\<^sub>3)"
+  let ?\<iota> = "Infer [(D, \<V>\<^sub>2), (C, \<V>\<^sub>1)] (R', \<V>\<^sub>3)"
   show ?thesis
   proof(rule that[OF _ inference_groundings])
 
@@ -907,7 +908,7 @@ proof-
       ground.Inf_from_q_def
       ground.G_Inf_def
       inference_system.Inf_from_def
-    sorry
+    by fastforce
 
   then show ?thesis
   proof cases
